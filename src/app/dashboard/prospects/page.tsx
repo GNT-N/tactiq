@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { apiFetch } from '@/lib/api'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
 const STATUTS = ['tous', 'nouveau', 'contacte', 'en_attente', 'converti', 'perdu']
@@ -20,34 +21,39 @@ const scoreColor = (score: number) => {
   return '#64748b'
 }
 
-const mockProspects = [
-  { id: '1', nom_entreprise: 'Menuiserie Fabre', secteur_activite: 'Artisan', ville: 'Grenoble', statut: 'contacte', score: 9, campagne: 'Artisans Grenoble', date: '2024-05-28' },
-  { id: '2', nom_entreprise: 'Resto Le Bouchon', secteur_activite: 'Restaurant', ville: 'Lyon', statut: 'en_attente', score: 7, campagne: 'Restaurants Lyon', date: '2024-05-25' },
-  { id: '3', nom_entreprise: 'Coiffure Élégance', secteur_activite: 'Coiffeur', ville: 'Saint-Étienne', statut: 'nouveau', score: 6, campagne: 'Coiffeurs St-Étienne', date: '2024-05-30' },
-  { id: '4', nom_entreprise: 'Plomberie Martin', secteur_activite: 'Artisan', ville: 'Lyon', statut: 'nouveau', score: 8, campagne: 'Artisans Lyon', date: '2024-05-29' },
-  { id: '5', nom_entreprise: 'Boulangerie Dupont', secteur_activite: 'Commerce', ville: 'Grenoble', statut: 'converti', score: 9, campagne: 'Artisans Grenoble', date: '2024-05-10' },
-  { id: '6', nom_entreprise: 'Auto École Central', secteur_activite: 'Formation', ville: 'Lyon', statut: 'perdu', score: 3, campagne: 'Restaurants Lyon', date: '2024-05-15' },
-  { id: '7', nom_entreprise: 'Cabinet Dentaire Blanc', secteur_activite: 'Santé', ville: 'Lyon', statut: 'nouveau', score: 5, campagne: 'Restaurants Lyon', date: '2024-06-01' },
-  { id: '8', nom_entreprise: 'Garage Renault Central', secteur_activite: 'Automobile', ville: 'Saint-Étienne', statut: 'contacte', score: 6, campagne: 'Coiffeurs St-Étienne', date: '2024-05-27' },
-]
-
 export default function ProspectsPage() {
   const router = useRouter()
   const [filtreStatut, setFiltreStatut] = useState('tous')
   const [recherche, setRecherche] = useState('')
-  const [prospects, setProspects] = useState(mockProspects)
+  const [prospects, setProspects] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    apiFetch('/api/prospects')
+      .then(res => res.json())
+      .then(data => {
+        setProspects(Array.isArray(data) ? data : [])
+        setLoading(false)
+      })
+      .catch(() => setLoading(false))
+  }, [])
+
+  const updateStatut = async (id: string, statut: string) => {
+    setProspects(prev => prev.map(p => p.id === id ? { ...p, statut } : p))
+    await apiFetch(`/api/prospects/detail/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ statut })
+    })
+  }
 
   const filtres = prospects.filter(p => {
     const matchStatut = filtreStatut === 'tous' || p.statut === filtreStatut
-    const matchRecherche = p.nom_entreprise.toLowerCase().includes(recherche.toLowerCase()) ||
-      p.ville.toLowerCase().includes(recherche.toLowerCase()) ||
-      p.secteur_activite.toLowerCase().includes(recherche.toLowerCase())
+    const matchRecherche = p.nom_entreprise?.toLowerCase().includes(recherche.toLowerCase()) ||
+      p.ville?.toLowerCase().includes(recherche.toLowerCase()) ||
+      p.secteur_activite?.toLowerCase().includes(recherche.toLowerCase())
     return matchStatut && matchRecherche
   })
-
-  const updateStatut = (id: string, statut: string) => {
-    setProspects(prev => prev.map(p => p.id === id ? { ...p, statut } : p))
-  }
 
   return (
     <div className="space-y-6">
@@ -55,9 +61,13 @@ export default function ProspectsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-white tracking-wide">Prospects</h2>
-          <p className="text-white/40 text-sm mt-1">{filtres.length} prospect{filtres.length > 1 ? 's' : ''} trouvé{filtres.length > 1 ? 's' : ''}</p>
+          <p className="text-white/40 text-sm mt-1">
+            {loading ? 'Chargement...' : `${filtres.length} prospect${filtres.length > 1 ? 's' : ''} trouvé${filtres.length > 1 ? 's' : ''}`}
+          </p>
         </div>
-        <button className="px-4 py-2 rounded-lg text-sm font-semibold text-black transition-all hover:opacity-80"
+        <button
+          onClick={() => router.push('/dashboard/prospects/nouveau')}
+          className="px-4 py-2 rounded-lg text-sm font-semibold text-black transition-all hover:opacity-80"
           style={{ background: 'linear-gradient(135deg, #00f5ff, #bf00ff)' }}>
           + Nouveau prospect
         </button>
@@ -65,7 +75,6 @@ export default function ProspectsPage() {
 
       {/* Filtres */}
       <div className="flex flex-col sm:flex-row gap-3">
-        {/* Recherche */}
         <input
           type="text"
           placeholder="Rechercher un prospect..."
@@ -73,8 +82,6 @@ export default function ProspectsPage() {
           onChange={e => setRecherche(e.target.value)}
           className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-white/30 text-sm focus:outline-none focus:border-cyan-500/50 transition"
         />
-
-        {/* Filtre statut */}
         <div className="flex gap-2 flex-wrap">
           {STATUTS.map(s => (
             <button key={s} onClick={() => setFiltreStatut(s)}
@@ -94,7 +101,6 @@ export default function ProspectsPage() {
       <div className="rounded-xl overflow-hidden"
         style={{ border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)' }}>
 
-        {/* Header tableau */}
         <div className="grid grid-cols-12 gap-4 px-5 py-3 text-xs font-semibold tracking-widest"
           style={{ backgroundColor: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <div className="col-span-3">ENTREPRISE</div>
@@ -105,10 +111,17 @@ export default function ProspectsPage() {
           <div className="col-span-2">STATUT</div>
         </div>
 
-        {/* Lignes */}
-        {filtres.length === 0 ? (
-          <div className="text-center py-12 text-white/30 text-sm">
-            Aucun prospect trouvé
+        {loading ? (
+          <div className="text-center py-12 text-white/30 text-sm">Chargement...</div>
+        ) : filtres.length === 0 ? (
+          <div className="text-center py-12 space-y-3">
+            <p className="text-4xl">◎</p>
+            <p className="text-white/30 text-sm">Aucun prospect trouvé</p>
+            <button
+              onClick={() => router.push('/dashboard/prospects/nouveau')}
+              className="text-cyan-400 text-sm hover:text-cyan-300 transition">
+              + Ajouter votre premier prospect
+            </button>
           </div>
         ) : (
           filtres.map((p, i) => (
@@ -122,40 +135,26 @@ export default function ProspectsPage() {
               onMouseLeave={e => (e.currentTarget.style.backgroundColor = i % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent')}
               onClick={() => router.push(`/dashboard/prospects/${p.id}`)}>
 
-              {/* Entreprise */}
               <div className="col-span-3 flex items-center">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold mr-3 flex-shrink-0"
                   style={{ backgroundColor: `${scoreColor(p.score)}20`, color: scoreColor(p.score) }}>
-                  {p.nom_entreprise.charAt(0)}
+                  {p.nom_entreprise?.charAt(0)}
                 </div>
                 <span className="text-white text-sm font-medium truncate group-hover:text-cyan-400 transition-colors">
                   {p.nom_entreprise}
                 </span>
               </div>
 
-              {/* Secteur */}
-              <div className="col-span-2 flex items-center text-sm text-white/50">
-                {p.secteur_activite}
-              </div>
+              <div className="col-span-2 flex items-center text-sm text-white/50">{p.secteur_activite || '—'}</div>
+              <div className="col-span-2 flex items-center text-sm text-white/50">{p.ville || '—'}</div>
+              <div className="col-span-2 flex items-center text-xs text-white/40 truncate">{p.campagne?.nom || '—'}</div>
 
-              {/* Ville */}
-              <div className="col-span-2 flex items-center text-sm text-white/50">
-                {p.ville}
-              </div>
-
-              {/* Campagne */}
-              <div className="col-span-2 flex items-center text-xs text-white/40 truncate">
-                {p.campagne}
-              </div>
-
-              {/* Score */}
               <div className="col-span-1 flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full flex-shrink-0"
                   style={{ backgroundColor: scoreColor(p.score), boxShadow: `0 0 6px ${scoreColor(p.score)}` }} />
                 <span className="text-sm font-bold" style={{ color: scoreColor(p.score) }}>{p.score}</span>
               </div>
 
-              {/* Statut dropdown */}
               <div className="col-span-2 flex items-center" onClick={e => e.stopPropagation()}>
                 <select
                   value={p.statut}
