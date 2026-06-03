@@ -97,11 +97,12 @@ export default function ProspectsPage() {
         </div>
       </div>
 
-      {/* Tableau */}
+      {/* Tableau desktop / Cards mobile */}
       <div className="rounded-xl overflow-hidden"
         style={{ border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)' }}>
 
-        <div className="grid grid-cols-12 gap-4 px-5 py-3 text-xs font-semibold tracking-widest"
+        {/* Header tableau — desktop uniquement */}
+        <div className="hidden lg:grid grid-cols-12 gap-4 px-5 py-3 text-xs font-semibold tracking-widest"
           style={{ backgroundColor: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
           <div className="col-span-3">ENTREPRISE</div>
           <div className="col-span-2">SECTEUR</div>
@@ -117,22 +118,22 @@ export default function ProspectsPage() {
           <div className="text-center py-12 space-y-3">
             <p className="text-4xl">◎</p>
             <p className="text-white/30 text-sm">Aucun prospect trouvé</p>
-            <button
-              onClick={() => router.push('/dashboard/prospects/nouveau')}
+            <button onClick={() => router.push('/dashboard/prospects/nouveau')}
               className="text-cyan-400 text-sm hover:text-cyan-300 transition">
               + Ajouter votre premier prospect
             </button>
           </div>
-        ) : (
-          filtres.map((p, i) => (
-            <div key={p.id}
-              className="grid grid-cols-12 gap-4 px-5 py-4 cursor-pointer transition-all duration-200 group"
-              style={{
-                backgroundColor: i % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent',
-                borderBottom: '1px solid rgba(255,255,255,0.04)',
-              }}
+        ) : filtres.map((p, i) => (
+          <div key={p.id}
+            style={{
+              backgroundColor: i % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent',
+              borderBottom: '1px solid rgba(255,255,255,0.04)',
+            }}>
+
+            {/* Vue desktop */}
+            <div className="hidden lg:grid grid-cols-12 gap-4 px-5 py-4 cursor-pointer transition-all duration-200 group"
               onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(0,245,255,0.04)')}
-              onMouseLeave={e => (e.currentTarget.style.backgroundColor = i % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent')}
+              onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
               onClick={() => router.push(`/dashboard/prospects/${p.id}`)}>
 
               <div className="col-span-3 flex items-center">
@@ -144,36 +145,46 @@ export default function ProspectsPage() {
                   {p.nom_entreprise}
                 </span>
               </div>
-
               <div className="col-span-2 flex items-center text-sm text-white/50">{p.secteur_activite || '—'}</div>
               <div className="col-span-2 flex items-center text-sm text-white/50">{p.ville || '—'}</div>
               <div className="col-span-2 flex items-center text-xs text-white/40 truncate">{p.campagne?.nom || '—'}</div>
-
               <div className="col-span-1 flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full flex-shrink-0"
                   style={{ backgroundColor: scoreColor(p.score), boxShadow: `0 0 6px ${scoreColor(p.score)}` }} />
                 <span className="text-sm font-bold" style={{ color: scoreColor(p.score) }}>{p.score}</span>
               </div>
-
               <div className="col-span-2 flex items-center" onClick={e => e.stopPropagation()}>
-                <select
-                  value={p.statut}
-                  onChange={e => updateStatut(p.id, e.target.value)}
+                <select value={p.statut} onChange={e => updateStatut(p.id, e.target.value)}
                   className="text-xs px-2 py-1.5 rounded-lg border-0 outline-none cursor-pointer w-full"
-                  style={{
-                    backgroundColor: `${statutConfig[p.statut]?.color}25`,
-                    color: statutConfig[p.statut]?.color,
-                  }}>
+                  style={{ backgroundColor: `${statutConfig[p.statut]?.color}25`, color: statutConfig[p.statut]?.color }}>
                   {Object.entries(statutConfig).map(([val, cfg]) => (
-                    <option key={val} value={val} style={{ backgroundColor: '#0a0f1e', color: 'white' }}>
-                      {cfg.label}
-                    </option>
+                    <option key={val} value={val} style={{ backgroundColor: '#0a0f1e', color: 'white' }}>{cfg.label}</option>
                   ))}
                 </select>
               </div>
             </div>
-          ))
-        )}
+
+            {/* Vue mobile — card */}
+            <div className="lg:hidden flex items-center gap-3 px-4 py-3 cursor-pointer"
+              onClick={() => router.push(`/dashboard/prospects/${p.id}`)}>
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold flex-shrink-0"
+                style={{ backgroundColor: `${scoreColor(p.score)}20`, color: scoreColor(p.score) }}>
+                {p.nom_entreprise?.charAt(0)}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-sm font-medium truncate">{p.nom_entreprise}</p>
+                <p className="text-white/40 text-xs">{[p.secteur_activite, p.ville].filter(Boolean).join(' · ')}</p>
+              </div>
+              <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                <span className="text-xs font-bold" style={{ color: scoreColor(p.score) }}>{p.score}/10</span>
+                <span className="text-xs px-2 py-0.5 rounded-full"
+                  style={{ backgroundColor: `${statutConfig[p.statut]?.color}25`, color: statutConfig[p.statut]?.color }}>
+                  {statutConfig[p.statut]?.label}
+                </span>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )
