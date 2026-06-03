@@ -1,0 +1,107 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id             String      @id @default(uuid())
+  email          String      @unique
+  nom            String?
+  metier         String?
+  ville          String?
+  plan           String      @default("free") // free | solo | pro | agence
+  theme          String      @default("cyberpunk")
+  dark_mode      Boolean     @default(true)
+  email_provider String?     // gmail | outlook | smtp
+  email_config   Json?       // tokens OAuth2 stockés
+  created_at     DateTime    @default(now())
+  updated_at     DateTime    @updatedAt
+
+  campagnes      Campagne[]
+  prospects      Prospect[]
+}
+
+model Secteur {
+  id          String     @id @default(uuid())
+  nom         String     @unique // "Freelance web", "Plombier"...
+  config_json Json       // signaux_besoin, critères_analyse, templates
+  created_at  DateTime   @default(now())
+
+  campagnes   Campagne[]
+}
+
+model Campagne {
+  id          String     @id @default(uuid())
+  user_id     String
+  secteur_id  String
+  nom         String
+  description String?
+  statut      String     @default("active") // active | pause | terminee
+  sources     Json?      // ["google_maps", "sirene", "linkedin"...]
+  criteres    Json?      // critères de recherche spécifiques
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @updatedAt
+
+  user        User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  secteur     Secteur    @relation(fields: [secteur_id], references: [id])
+  prospects   Prospect[]
+}
+
+model Prospect {
+  id               String        @id @default(uuid())
+  user_id          String
+  campagne_id      String?
+  nom_entreprise   String
+  secteur_activite String?
+  ville            String?
+  adresse          String?
+  telephone        String?
+  email_contact    String?
+  site_web         String?
+  nom_dirigeant    String?
+  siret            String?
+  score            Int           @default(0) // 0-10 calculé par IA, ajustable
+  statut           String        @default("nouveau") // nouveau | contacte | en_attente | converti | perdu
+  valeur_estimee   Float?        // pipeline €
+  analyse_json     Json?         // analyse IA du besoin web
+  resume_ia        String?       // résumé IA en texte libre
+  notes            String?
+  prochaine_action String?
+  prochaine_action_date DateTime?
+  created_at       DateTime      @default(now())
+  updated_at       DateTime      @updatedAt
+
+  user             User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  campagne         Campagne?     @relation(fields: [campagne_id], references: [id])
+  interactions     Interaction[]
+  emails           Email[]
+}
+
+model Interaction {
+  id            String    @id @default(uuid())
+  prospect_id   String
+  type          String    // email_envoye | appel | note | statut_change | relance
+  contenu       String?
+  statut_avant  String?
+  statut_apres  String?
+  created_at    DateTime  @default(now())
+
+  prospect      Prospect  @relation(fields: [prospect_id], references: [id], onDelete: Cascade)
+}
+
+model Email {
+  id             String    @id @default(uuid())
+  prospect_id    String
+  sujet          String
+  contenu        String
+  statut         String    @default("genere") // genere | envoye | ouvert | repondu
+  prompt_utilise String?   // stocké invisible en V1, feature Pro en V2
+  envoye_at      DateTime?
+  ouvert_at      DateTime?
+  created_at     DateTime  @default(now())
+
+  prospect       Prospect  @relation(fields: [prospect_id], references: [id], onDelete: Cascade)
+}
