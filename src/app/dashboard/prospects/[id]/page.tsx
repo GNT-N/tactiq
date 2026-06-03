@@ -86,25 +86,31 @@ export default function ProspectDetailPage() {
     <div className="space-y-6">
 
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-4">
-          <button onClick={() => router.back()} className="text-white/40 hover:text-white transition text-sm">← Retour</button>
-          <div>
-            <h2 className="text-2xl font-bold text-white">{prospect.nom_entreprise}</h2>
-            <p className="text-white/40 text-sm">
-              {[prospect.secteur_activite, prospect.ville, prospect.campagne?.nom].filter(Boolean).join(' · ')}
-            </p>
+      <div className="space-y-3">
+        {/* Ligne 1 : Retour + Actions */}
+        <div className="flex items-center justify-between">
+          <button onClick={() => router.back()}
+            className="flex items-center gap-1.5 text-sm text-white/40 hover:text-white transition">
+            ← Retour
+          </button>
+          <div className="flex gap-2">
+            <button className="px-3 py-2 rounded-lg text-xs font-semibold text-black transition hover:opacity-80"
+              style={{ background: 'linear-gradient(135deg, #00f5ff, #bf00ff)' }}>
+              ✉ Email IA
+            </button>
+            <button className="px-3 py-2 rounded-lg text-xs text-white/60 hover:text-white transition"
+              style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+              ✎ Modifier
+            </button>
           </div>
         </div>
-        <div className="flex gap-2">
-          <button className="px-4 py-2 rounded-lg text-sm font-semibold text-black transition hover:opacity-80"
-            style={{ background: 'linear-gradient(135deg, #00f5ff, #bf00ff)' }}>
-            ✉ Générer un email
-          </button>
-          <button className="px-4 py-2 rounded-lg text-sm text-white/60 hover:text-white transition"
-            style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
-            ✎ Modifier
-          </button>
+
+        {/* Ligne 2 : Nom + infos */}
+        <div>
+          <h2 className="text-xl font-bold text-white">{prospect.nom_entreprise}</h2>
+          <p className="text-white/40 text-sm">
+            {[prospect.secteur_activite, prospect.ville, prospect.campagne?.nom].filter(Boolean).join(' · ')}
+          </p>
         </div>
       </div>
 
