@@ -37,7 +37,7 @@ model Secteur {
 model Campagne {
   id          String     @id @default(uuid())
   user_id     String
-  secteur_id  String
+  secteur_id  String?
   nom         String
   description String?
   statut      String     @default("active") // active | pause | terminee
@@ -47,7 +47,7 @@ model Campagne {
   updated_at  DateTime   @updatedAt
 
   user        User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  secteur     Secteur    @relation(fields: [secteur_id], references: [id])
+  secteur     Secteur?    @relation(fields: [secteur_id], references: [id])
   prospects   Prospect[]
 }
 
