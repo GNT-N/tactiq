@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { apiFetch } from '@/lib/api'
+import EmailGeneratorModal from '@/components/EmailGeneratorModal'
 
 const statutConfig: Record<string, { label: string, color: string }> = {
   nouveau:    { label: 'Nouveau',    color: '#64748b' },
@@ -35,6 +36,7 @@ export default function ProspectDetailPage() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [note, setNote] = useState('')
+  const [showEmailModal, setShowEmailModal] = useState(false)
 
   useEffect(() => {
     apiFetch(`/api/prospects/detail/${id}`)
@@ -60,7 +62,6 @@ export default function ProspectDetailPage() {
       })
     })
     setNote('')
-    // Recharge le prospect
     apiFetch(`/api/prospects/detail/${id}`)
       .then(res => res.json())
       .then(data => setProspect(data))
@@ -85,16 +86,25 @@ export default function ProspectDetailPage() {
   return (
     <div className="space-y-6">
 
+      {/* Modale email */}
+      {showEmailModal && (
+        <EmailGeneratorModal
+          prospect={prospect}
+          onClose={() => setShowEmailModal(false)}
+        />
+      )}
+
       {/* Header */}
       <div className="space-y-3">
-        {/* Ligne 1 : Retour + Actions */}
         <div className="flex items-center justify-between">
           <button onClick={() => router.back()}
             className="flex items-center gap-1.5 text-sm text-white/40 hover:text-white transition">
             ← Retour
           </button>
           <div className="flex gap-2">
-            <button className="px-3 py-2 rounded-lg text-xs font-semibold text-black transition hover:opacity-80"
+            <button
+              onClick={() => setShowEmailModal(true)}
+              className="px-3 py-2 rounded-lg text-xs font-semibold text-black transition hover:opacity-80"
               style={{ background: 'linear-gradient(135deg, #00f5ff, #bf00ff)' }}>
               ✉ Email IA
             </button>
@@ -104,8 +114,6 @@ export default function ProspectDetailPage() {
             </button>
           </div>
         </div>
-
-        {/* Ligne 2 : Nom + infos */}
         <div>
           <h2 className="text-xl font-bold text-white">{prospect.nom_entreprise}</h2>
           <p className="text-white/40 text-sm">
@@ -118,8 +126,6 @@ export default function ProspectDetailPage() {
 
         {/* Colonne gauche */}
         <div className="space-y-4">
-
-          {/* Infos principales */}
           <div className="rounded-xl p-5 space-y-4"
             style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
             <h3 className="text-xs font-semibold tracking-widest text-white/40">INFORMATIONS</h3>
@@ -182,7 +188,6 @@ export default function ProspectDetailPage() {
             </div>
           </div>
 
-          {/* Analyse IA */}
           {prospect.resume_ia && (
             <div className="rounded-xl p-5 space-y-3"
               style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
@@ -191,7 +196,6 @@ export default function ProspectDetailPage() {
             </div>
           )}
 
-          {/* Prochaine action */}
           {prospect.prochaine_action && (
             <div className="rounded-xl p-4"
               style={{ background: 'rgba(0,245,255,0.05)', border: '1px solid rgba(0,245,255,0.15)' }}>
@@ -208,8 +212,6 @@ export default function ProspectDetailPage() {
 
         {/* Colonne droite */}
         <div className="lg:col-span-2 space-y-4">
-
-          {/* Notes */}
           <div className="rounded-xl p-5"
             style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
             <h3 className="text-xs font-semibold tracking-widest text-white/40 mb-3">NOTES</h3>
@@ -218,7 +220,6 @@ export default function ProspectDetailPage() {
             </p>
           </div>
 
-          {/* Timeline */}
           <div className="rounded-xl p-5"
             style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
             <h3 className="text-xs font-semibold tracking-widest text-white/40 mb-4">HISTORIQUE</h3>
@@ -254,7 +255,6 @@ export default function ProspectDetailPage() {
               </div>
             )}
 
-            {/* Ajouter une note */}
             <div className="mt-4 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
               <div className="flex gap-2">
                 <input
