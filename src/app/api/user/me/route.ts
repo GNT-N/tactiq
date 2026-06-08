@@ -25,3 +25,29 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
+
+export async function PATCH(request: Request) {
+  try {
+    const authHeader = request.headers.get('Authorization')
+    if (!authHeader) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user } } = await supabaseAdmin.auth.getUser(token)
+    if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+
+    const body = await request.json()
+
+    const profile = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        nom: body.nom !== undefined ? body.nom : undefined,
+        metier: body.metier !== undefined ? body.metier : undefined,
+        ville: body.ville !== undefined ? body.ville : undefined,
+        theme: body.theme !== undefined ? body.theme : undefined,
+      }
+    })
+
+    return NextResponse.json(profile)
+  } catch (error) {
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+  }
+}
