@@ -33,6 +33,14 @@ export default function CampagneDetailPage() {
   const [campagne, setCampagne] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
+  const supprimerCampagne = async () => {
+    setDeleting(true)
+    await apiFetch(`/api/campagnes/${id}`, { method: 'DELETE' })
+    router.push('/dashboard/campagnes')
+  }
 
   useEffect(() => {
     apiFetch(`/api/campagnes/${id}`)
@@ -74,6 +82,32 @@ export default function CampagneDetailPage() {
   return (
     <div className="space-y-6">
 
+      {/* Modale confirmation suppression */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)' }}>
+          <div className="w-full max-w-md rounded-2xl p-6 space-y-4"
+            style={{ backgroundColor: '#0a0f1e', border: '1px solid rgba(239,68,68,0.3)' }}>
+            <h3 className="text-lg font-bold text-white">Supprimer cette campagne ?</h3>
+            <p className="text-white/60 text-sm">
+              Les prospects de cette campagne ne seront pas supprimés, ils seront simplement détachés.
+            </p>
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 px-4 py-2 rounded-lg text-sm text-white/60 hover:text-white transition"
+                style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+                Annuler
+              </button>
+              <button onClick={supprimerCampagne} disabled={deleting}
+                className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold text-white transition hover:opacity-80 disabled:opacity-50"
+                style={{ backgroundColor: '#ef4444' }}>
+                {deleting ? 'Suppression...' : 'Supprimer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -93,6 +127,12 @@ export default function CampagneDetailPage() {
                 {campagneStatutConfig[st].label}
               </button>
             ))}
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="px-3 py-1.5 rounded-lg text-xs text-red-400 hover:text-red-300 transition"
+              style={{ border: '1px solid rgba(239,68,68,0.2)' }}>
+              🗑 Supprimer
+            </button>
           </div>
         </div>
         <div>

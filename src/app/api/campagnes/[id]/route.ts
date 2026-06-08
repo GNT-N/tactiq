@@ -17,14 +17,15 @@ async function getUser(request: Request) {
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getUser(request)
     if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
 
     const campagne = await prisma.campagne.findFirst({
-      where: { id: params.id, user_id: user.id },
+      where: { id, user_id: user.id },
       include: {
         secteur: true,
         prospects: {
@@ -42,20 +43,46 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getUser(request)
     if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
 
     const body = await request.json()
 
     const campagne = await prisma.campagne.updateMany({
-      where: { id: params.id, user_id: user.id },
+      where: { id, user_id: user.id },
       data: body
     })
 
     return NextResponse.json(campagne)
+  } catch (error) {
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const user = await getUser(request)
+    if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+
+    // Détache les prospects de la campagne avant suppression
+    await prisma.prospect.updateMany({
+      where: { campagne_id: id, user_id: user.id },
+      data: { campagne_id: null }
+    })
+
+    await prisma.campagne.deleteMany({
+      where: { id, user_id: user.id }
+    })
+
+    return NextResponse.json({ success: true })
   } catch (error) {
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }

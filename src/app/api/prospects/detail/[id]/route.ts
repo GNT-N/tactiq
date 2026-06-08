@@ -61,3 +61,58 @@ export async function PATCH(
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
+
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const user = await getUser(request)
+    if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+
+    const body = await request.json()
+
+    const prospect = await prisma.prospect.updateMany({
+      where: { id, user_id: user.id },
+      data: {
+        nom_entreprise: body.nom_entreprise,
+        secteur_activite: body.secteur_activite || null,
+        ville: body.ville || null,
+        adresse: body.adresse || null,
+        telephone: body.telephone || null,
+        email_contact: body.email_contact || null,
+        site_web: body.site_web || null,
+        nom_dirigeant: body.nom_dirigeant || null,
+        siret: body.siret || null,
+        valeur_estimee: body.valeur_estimee || null,
+        notes: body.notes || null,
+        campagne_id: body.campagne_id || null,
+        score: body.score,
+      }
+    })
+
+    return NextResponse.json(prospect)
+  } catch (error) {
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+  }
+}
+
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const user = await getUser(request)
+    if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+
+    await prisma.prospect.deleteMany({
+      where: { id, user_id: user.id }
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+  }
+}
