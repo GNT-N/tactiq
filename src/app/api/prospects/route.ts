@@ -54,6 +54,7 @@ export async function POST(request: Request) {
         siret: body.siret || null,
         valeur_estimee: body.valeur_estimee || null,
         notes: body.notes || null,
+        campagne_id: body.campagne_id || null,
         score: 0,
         statut: 'nouveau',
       }

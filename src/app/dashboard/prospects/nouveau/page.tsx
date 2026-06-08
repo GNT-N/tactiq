@@ -1,13 +1,14 @@
 'use client'
 
-import { useState } from 'react'
 import { apiFetch } from '@/lib/api'
 import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 export default function NouveauProspectPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [campagnes, setCampagnes] = useState<any[]>([])
   const [form, setForm] = useState({
     nom_entreprise: '',
     secteur_activite: '',
@@ -20,23 +21,30 @@ export default function NouveauProspectPage() {
     siret: '',
     valeur_estimee: '',
     notes: '',
+    campagne_id: '',
   })
+
+  useEffect(() => {
+    apiFetch('/api/campagnes')
+      .then(res => res.json())
+      .then(data => setCampagnes(Array.isArray(data) ? data : []))
+  }, [])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
   }
 
   const handleSubmit = async () => {
-    if (!form.nom_entreprise) { setError('Le nom de l\'entreprise est requis'); return }
+    if (!form.nom_entreprise) { setError("Le nom de l'entreprise est requis"); return }
     setLoading(true)
     setError('')
 
     const res = await apiFetch('/api/prospects', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         ...form,
         valeur_estimee: form.valeur_estimee ? parseFloat(form.valeur_estimee) : null,
+        campagne_id: form.campagne_id || null,
       })
     })
 
@@ -115,6 +123,17 @@ export default function NouveauProspectPage() {
             <label className={labelClass}>SIRET</label>
             <input name="siret" value={form.siret} onChange={handleChange}
               placeholder="123 456 789 00012" className={inputClass} />
+          </div>
+
+          <div>
+            <label className={labelClass}>Campagne</label>
+            <select name="campagne_id" value={form.campagne_id} onChange={handleChange}
+              className={inputClass}>
+              <option value="" style={{ backgroundColor: '#0a0f1e' }}>Aucune campagne</option>
+              {campagnes.map(c => (
+                <option key={c.id} value={c.id} style={{ backgroundColor: '#0a0f1e' }}>{c.nom}</option>
+              ))}
+            </select>
           </div>
         </div>
 

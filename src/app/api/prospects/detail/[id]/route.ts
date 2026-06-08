@@ -17,14 +17,15 @@ async function getUser(request: Request) {
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getUser(request)
     if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
 
     const prospect = await prisma.prospect.findFirst({
-      where: { id: params.id, user_id: user.id },
+      where: { id, user_id: user.id },
       include: {
         campagne: true,
         interactions: { orderBy: { created_at: 'desc' } },
@@ -41,16 +42,17 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const user = await getUser(request)
     if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
 
     const body = await request.json()
 
     const prospect = await prisma.prospect.updateMany({
-      where: { id: params.id, user_id: user.id },
+      where: { id, user_id: user.id },
       data: body
     })
 
