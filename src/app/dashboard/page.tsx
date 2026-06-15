@@ -203,14 +203,13 @@ export default function DashboardPage() {
               <div key={i}>
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-sm text-white font-medium">{c.nom}</span>
-                  <span className="text-xs px-2 py-0.5 rounded-full"
-                    style={{ backgroundColor: 'rgba(0,245,255,0.15)', color: '#00f5ff' }}>
-                    {c._count?.prospects || 0} prospects
+                  <span className="text-xs text-white/40">
+                    {c.convertis}/{c.total} convertis · {c.tauxConversion}%
                   </span>
                 </div>
                 <div className="h-1.5 rounded-full bg-white/10">
-                  <div className="h-full rounded-full"
-                    style={{ width: '100%', backgroundColor: '#00f5ff', boxShadow: '0 0 8px #00f5ff' }} />
+                  <div className="h-full rounded-full transition-all duration-1000"
+                    style={{ width: `${c.tauxConversion}%`, backgroundColor: '#00f5ff', boxShadow: '0 0 8px #00f5ff' }} />
                 </div>
               </div>
             ))}

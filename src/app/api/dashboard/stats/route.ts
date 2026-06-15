@@ -73,12 +73,27 @@ export async function GET(request: Request) {
       .map(([jour, prospects]) => ({ jour, prospects }))
       .sort((a, b) => a.jour.localeCompare(b.jour))
 
-    const campagnes = await prisma.campagne.findMany({
+    const campagnesRaw = await prisma.campagne.findMany({
       where: { user_id: user.id, statut: 'active' },
-      include: { _count: { select: { prospects: true } } },
+      include: {
+        prospects: { select: { statut: true } }
+      },
       take: 5
     })
 
+    const campagnes = campagnesRaw.map(c => {
+      const total = c.prospects.length
+      const convertis = c.prospects.filter(p => p.statut === 'converti').length
+      const tauxConversion = total > 0 ? Math.round((convertis / total) * 100) : 0
+      return {
+        id: c.id,
+        nom: c.nom,
+        total,
+        convertis,
+        tauxConversion,
+      }
+    })
+    
     return NextResponse.json({
       stats: { totalProspects, emailsEnvoyes, tauxConversion, pipeline },
       statuts,
