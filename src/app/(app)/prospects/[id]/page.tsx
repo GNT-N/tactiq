@@ -66,7 +66,7 @@ export default function ProspectDetailPage() {
   const supprimerProspect = async () => {
   setDeleting(true)
   await apiFetch(`/api/prospects/detail/${id}`, { method: 'DELETE' })
-  router.push('/dashboard/prospects')
+  router.push('/prospects')
 }
 
   const analyser = () => {
@@ -106,7 +106,7 @@ export default function ProspectDetailPage() {
     <div className="text-center py-20 text-white/40">
       <p className="text-4xl mb-4">◎</p>
       <p>Prospect introuvable</p>
-      <Link href="/dashboard/prospects" className="text-[var(--theme-primary)] text-sm mt-2 inline-block">← Retour aux prospects</Link>
+      <Link href="/prospects" className="text-[var(--theme-primary)] text-sm mt-2 inline-block">← Retour aux prospects</Link>
     </div>
   )
 
@@ -172,7 +172,7 @@ export default function ProspectDetailPage() {
               ✉ Email IA
             </button>
             <button
-              onClick={() => router.push(`/dashboard/prospects/${id}/modifier`)}
+              onClick={() => router.push(`/prospects/${id}/modifier`)}
               className="px-3 py-2 rounded-lg text-xs text-white/60 hover:text-white transition"
               style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
               ✎ Modifier

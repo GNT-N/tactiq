@@ -31,7 +31,7 @@ export default function LoginPage() {
         method: 'POST',
         headers: { Authorization: `Bearer ${data.session.access_token}` }
       })
-      window.location.href = '/dashboard'
+      window.location.href = '/'
     }
   }
 

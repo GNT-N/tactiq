@@ -39,7 +39,7 @@ export default function RegisterPage() {
         method: 'POST',
         headers: { Authorization: `Bearer ${data.session.access_token}` }
       })
-      router.push('/dashboard')
+      router.push('/')
       return
     }
 

@@ -128,7 +128,7 @@ export default function EmailsPage() {
 
             {selected.prospect && (
               <button
-                onClick={() => router.push(`/dashboard/prospects/${selected.prospect.id}`)}
+                onClick={() => router.push(`/prospects/${selected.prospect.id}`)}
                 className="text-[var(--theme-primary)] text-sm hover:opacity-80 transition">
                 → Voir le prospect
               </button>

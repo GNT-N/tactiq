@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { apiFetch } from '@/lib/api'
 import Link from 'next/link'
+import { CATEGORIES } from '@/lib/overpass'
 
 const statutConfig: Record<string, { label: string, color: string }> = {
   nouveau:    { label: 'Nouveau',    color: '#64748b' },
@@ -38,11 +39,19 @@ export default function CampagneDetailPage() {
   const [analyse, setAnalyse] = useState<{ encours: boolean, traites: number, restants: number, erreur: string }>(
     { encours: false, traites: 0, restants: 0, erreur: '' }
   )
+  const [sourcing, setSourcing] = useState({
+    ville: '',
+    categorie: Object.keys(CATEGORIES)[0],
+    limite: 50,
+    encours: false,
+    message: '',
+    erreur: '',
+  })
 
   const supprimerCampagne = async () => {
     setDeleting(true)
     await apiFetch(`/api/campagnes/${id}`, { method: 'DELETE' })
-    router.push('/dashboard/campagnes')
+    router.push('/campagnes')
   }
 
   const chargerCampagne = () =>
@@ -61,6 +70,40 @@ export default function CampagneDetailPage() {
     chargerCampagne()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
+
+  const importer = async () => {
+    if (!sourcing.ville.trim() || sourcing.encours) return
+    setSourcing(s => ({ ...s, encours: true, message: '', erreur: '' }))
+
+    try {
+      const res = await apiFetch('/api/prospects/importer', {
+        method: 'POST',
+        body: JSON.stringify({
+          campagne_id: id,
+          ville: sourcing.ville.trim(),
+          categorie: sourcing.categorie,
+          limite: sourcing.limite,
+        })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'import')
+
+      const details = [
+        `${data.importes} prospect${data.importes > 1 ? 's' : ''} importé${data.importes > 1 ? 's' : ''}`,
+        data.doublons > 0 ? `${data.doublons} déjà connu${data.doublons > 1 ? 's' : ''}` : null,
+        data.limite_atteinte ? `limite atteinte sur ${data.trouves} trouvés` : null,
+      ].filter(Boolean).join(' · ')
+
+      setSourcing(s => ({ ...s, encours: false, message: details }))
+      await chargerCampagne()
+    } catch (e) {
+      setSourcing(s => ({
+        ...s,
+        encours: false,
+        erreur: e instanceof Error ? e.message : "L'import a échoué",
+      }))
+    }
+  }
 
   // Le serveur ne traite qu'un lot borné par appel : on rappelle jusqu'à
   // épuisement, en s'arrêtant si un tour n'avance plus.
@@ -108,7 +151,7 @@ export default function CampagneDetailPage() {
     <div className="text-center py-20 text-white/40">
       <p className="text-4xl mb-4">◈</p>
       <p>Campagne introuvable</p>
-      <Link href="/dashboard/campagnes" className="text-[var(--theme-primary)] text-sm mt-2 inline-block">← Retour aux campagnes</Link>
+      <Link href="/campagnes" className="text-[var(--theme-primary)] text-sm mt-2 inline-block">← Retour aux campagnes</Link>
     </div>
   )
 
@@ -148,6 +191,65 @@ export default function CampagneDetailPage() {
           {analyse.erreur}
         </p>
       )}
+
+      {/* Sourcing OpenStreetMap */}
+      <div className="rounded-xl p-5 space-y-4"
+        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
+        <div>
+          <h3 className="text-xs font-semibold tracking-widest text-white/40">SOURCING</h3>
+          <p className="text-white/30 text-xs mt-1">
+            Cherche dans OpenStreetMap les établissements d&apos;une commune qui n&apos;ont aucun site web.
+          </p>
+        </div>
+
+        <div className="flex gap-3 flex-wrap items-end">
+          <div className="flex-1 min-w-[160px]">
+            <label className="text-xs text-white/40 mb-1.5 block">Commune</label>
+            <input
+              value={sourcing.ville}
+              onChange={e => setSourcing(s => ({ ...s, ville: e.target.value }))}
+              onKeyDown={e => e.key === 'Enter' && importer()}
+              placeholder="Lyon"
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder-white/20 focus:outline-none focus:border-[var(--theme-primary-50)] transition"
+            />
+          </div>
+
+          <div className="flex-1 min-w-[180px]">
+            <label className="text-xs text-white/40 mb-1.5 block">Activité</label>
+            <select
+              value={sourcing.categorie}
+              onChange={e => setSourcing(s => ({ ...s, categorie: e.target.value }))}
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition">
+              {Object.keys(CATEGORIES).map(c => (
+                <option key={c} value={c} style={{ backgroundColor: 'var(--theme-card)' }}>{c}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="w-24">
+            <label className="text-xs text-white/40 mb-1.5 block">Max</label>
+            <input
+              type="number" min={1} max={200}
+              value={sourcing.limite}
+              onChange={e => setSourcing(s => ({ ...s, limite: Number(e.target.value) }))}
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition"
+            />
+          </div>
+
+          <button onClick={importer} disabled={sourcing.encours || !sourcing.ville.trim()}
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-black transition hover:opacity-80 disabled:opacity-40"
+            style={{ background: 'linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))' }}>
+            {sourcing.encours ? 'Recherche...' : '⌕ Importer'}
+          </button>
+        </div>
+
+        {sourcing.message && (
+          <p className="text-sm" style={{ color: 'var(--theme-primary)' }}>{sourcing.message}</p>
+        )}
+        {sourcing.erreur && (
+          <p className="text-red-400 text-sm">{sourcing.erreur}</p>
+        )}
+      </div>
 
       {/* Header */}
       <div className="space-y-3">
@@ -220,7 +322,7 @@ export default function CampagneDetailPage() {
             PROSPECTS ({campagne.prospects?.length || 0})
           </h3>
           <button
-            onClick={() => router.push('/dashboard/prospects/nouveau')}
+            onClick={() => router.push('/prospects/nouveau')}
             className="text-xs px-3 py-1.5 rounded-lg font-medium text-black"
             style={{ background: 'linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))' }}>
             + Ajouter
@@ -241,7 +343,7 @@ export default function CampagneDetailPage() {
               }}
               onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--theme-primary-04)')}
               onMouseLeave={e => (e.currentTarget.style.backgroundColor = i % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent')}
-              onClick={() => router.push(`/dashboard/prospects/${p.id}`)}>
+              onClick={() => router.push(`/prospects/${p.id}`)}>
 
               <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
                 style={{ backgroundColor: `${scoreColor(p.score)}20`, color: scoreColor(p.score) }}>

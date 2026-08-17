@@ -66,7 +66,7 @@ export default function ProspectsPage() {
           </p>
         </div>
         <button
-          onClick={() => router.push('/dashboard/prospects/nouveau')}
+          onClick={() => router.push('/prospects/nouveau')}
           className="px-4 py-2 rounded-lg text-sm font-semibold text-black transition-all hover:opacity-80"
           style={{ background: 'linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))' }}>
           + Nouveau prospect
@@ -118,7 +118,7 @@ export default function ProspectsPage() {
           <div className="text-center py-12 space-y-3">
             <p className="text-4xl">◎</p>
             <p className="text-white/30 text-sm">Aucun prospect trouvé</p>
-            <button onClick={() => router.push('/dashboard/prospects/nouveau')}
+            <button onClick={() => router.push('/prospects/nouveau')}
               className="text-[var(--theme-primary)] text-sm hover:opacity-80 transition">
               + Ajouter votre premier prospect
             </button>
@@ -134,7 +134,7 @@ export default function ProspectsPage() {
             <div className="hidden lg:grid grid-cols-12 gap-4 px-5 py-4 cursor-pointer transition-all duration-200 group"
               onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--theme-primary-04)')}
               onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
-              onClick={() => router.push(`/dashboard/prospects/${p.id}`)}>
+              onClick={() => router.push(`/prospects/${p.id}`)}>
 
               <div className="col-span-3 flex items-center">
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold mr-3 flex-shrink-0"
@@ -166,7 +166,7 @@ export default function ProspectsPage() {
 
             {/* Vue mobile — card */}
             <div className="lg:hidden flex items-center gap-3 px-4 py-3 cursor-pointer"
-              onClick={() => router.push(`/dashboard/prospects/${p.id}`)}>
+              onClick={() => router.push(`/prospects/${p.id}`)}>
               <div className="w-10 h-10 rounded-lg flex items-center justify-center text-sm font-bold flex-shrink-0"
                 style={{ backgroundColor: `${scoreColor(p.score)}20`, color: scoreColor(p.score) }}>
                 {p.nom_entreprise?.charAt(0)}

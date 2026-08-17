@@ -1,12 +1,14 @@
 'use client'
 
 import { apiFetch } from '@/lib/api'
-import { useRouter } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
-export default function NouveauProspectPage() {
+export default function ModifierProspectPage() {
+  const { id } = useParams()
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(true)
   const [error, setError] = useState('')
   const [campagnes, setCampagnes] = useState<any[]>([])
   const [form, setForm] = useState({
@@ -22,13 +24,33 @@ export default function NouveauProspectPage() {
     valeur_estimee: '',
     notes: '',
     campagne_id: '',
+    score: 0,
   })
 
   useEffect(() => {
-    apiFetch('/api/campagnes')
-      .then(res => res.json())
-      .then(data => setCampagnes(Array.isArray(data) ? data : []))
-  }, [])
+    Promise.all([
+      apiFetch(`/api/prospects/detail/${id}`).then(r => r.json()),
+      apiFetch('/api/campagnes').then(r => r.json()),
+    ]).then(([prospect, camps]) => {
+      setForm({
+        nom_entreprise: prospect.nom_entreprise || '',
+        secteur_activite: prospect.secteur_activite || '',
+        ville: prospect.ville || '',
+        adresse: prospect.adresse || '',
+        telephone: prospect.telephone || '',
+        email_contact: prospect.email_contact || '',
+        site_web: prospect.site_web || '',
+        nom_dirigeant: prospect.nom_dirigeant || '',
+        siret: prospect.siret || '',
+        valeur_estimee: prospect.valeur_estimee?.toString() || '',
+        notes: prospect.notes || '',
+        campagne_id: prospect.campagne_id || '',
+        score: prospect.score || 0,
+      })
+      setCampagnes(Array.isArray(camps) ? camps : [])
+      setFetching(false)
+    }).catch(() => setFetching(false))
+  }, [id])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }))
@@ -39,20 +61,20 @@ export default function NouveauProspectPage() {
     setLoading(true)
     setError('')
 
-    const res = await apiFetch('/api/prospects', {
-      method: 'POST',
+    const res = await apiFetch(`/api/prospects/detail/${id}`, {
+      method: 'PUT',
       body: JSON.stringify({
         ...form,
         valeur_estimee: form.valeur_estimee ? parseFloat(form.valeur_estimee) : null,
         campagne_id: form.campagne_id || null,
+        score: parseInt(form.score.toString()) || 0,
       })
     })
 
     if (res.ok) {
-      const data = await res.json()
-      router.push(`/dashboard/prospects/${data.id}`)
+      router.push(`/prospects/${id}`)
     } else {
-      setError('Erreur lors de la création')
+      setError('Erreur lors de la modification')
       setLoading(false)
     }
   }
@@ -60,13 +82,19 @@ export default function NouveauProspectPage() {
   const inputClass = "w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition"
   const labelClass = "text-xs text-white/40 mb-1.5 block tracking-wide"
 
+  if (fetching) return (
+    <div className="flex items-center justify-center py-20">
+      <p className="text-white/40">Chargement...</p>
+    </div>
+  )
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-white">Nouveau prospect</h2>
-          <p className="text-white/40 text-sm mt-1">Remplissez les informations du prospect</p>
+          <h2 className="text-2xl font-bold text-white">Modifier le prospect</h2>
+          <p className="text-white/40 text-sm mt-1">{form.nom_entreprise}</p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => router.back()}
@@ -77,7 +105,7 @@ export default function NouveauProspectPage() {
           <button onClick={handleSubmit} disabled={loading}
             className="px-4 py-2 rounded-lg text-sm font-semibold text-black transition hover:opacity-80 disabled:opacity-50"
             style={{ background: 'linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))' }}>
-            {loading ? 'Création...' : 'Créer le prospect'}
+            {loading ? 'Enregistrement...' : 'Enregistrer'}
           </button>
         </div>
       </div>
@@ -97,38 +125,27 @@ export default function NouveauProspectPage() {
 
           <div>
             <label className={labelClass}>Nom de l'entreprise *</label>
-            <input name="nom_entreprise" value={form.nom_entreprise} onChange={handleChange}
-              placeholder="Menuiserie Fabre" className={inputClass} />
+            <input name="nom_entreprise" value={form.nom_entreprise} onChange={handleChange} className={inputClass} />
           </div>
-
           <div>
             <label className={labelClass}>Secteur d'activité</label>
-            <input name="secteur_activite" value={form.secteur_activite} onChange={handleChange}
-              placeholder="Artisan, Restaurant, Commerce..." className={inputClass} />
+            <input name="secteur_activite" value={form.secteur_activite} onChange={handleChange} className={inputClass} />
           </div>
-
           <div>
             <label className={labelClass}>Ville</label>
-            <input name="ville" value={form.ville} onChange={handleChange}
-              placeholder="Lyon" className={inputClass} />
+            <input name="ville" value={form.ville} onChange={handleChange} className={inputClass} />
           </div>
-
           <div>
             <label className={labelClass}>Adresse</label>
-            <input name="adresse" value={form.adresse} onChange={handleChange}
-              placeholder="12 rue des Artisans, 38000 Grenoble" className={inputClass} />
+            <input name="adresse" value={form.adresse} onChange={handleChange} className={inputClass} />
           </div>
-
           <div>
             <label className={labelClass}>SIRET</label>
-            <input name="siret" value={form.siret} onChange={handleChange}
-              placeholder="123 456 789 00012" className={inputClass} />
+            <input name="siret" value={form.siret} onChange={handleChange} className={inputClass} />
           </div>
-
           <div>
             <label className={labelClass}>Campagne</label>
-            <select name="campagne_id" value={form.campagne_id} onChange={handleChange}
-              className={inputClass}>
+            <select name="campagne_id" value={form.campagne_id} onChange={handleChange} className={inputClass}>
               <option value="" style={{ backgroundColor: 'var(--theme-card)' }}>Aucune campagne</option>
               {campagnes.map(c => (
                 <option key={c.id} value={c.id} style={{ backgroundColor: 'var(--theme-card)' }}>{c.nom}</option>
@@ -144,32 +161,27 @@ export default function NouveauProspectPage() {
 
           <div>
             <label className={labelClass}>Nom du dirigeant</label>
-            <input name="nom_dirigeant" value={form.nom_dirigeant} onChange={handleChange}
-              placeholder="Pierre Fabre" className={inputClass} />
+            <input name="nom_dirigeant" value={form.nom_dirigeant} onChange={handleChange} className={inputClass} />
           </div>
-
           <div>
             <label className={labelClass}>Téléphone</label>
-            <input name="telephone" value={form.telephone} onChange={handleChange}
-              placeholder="04 76 12 34 56" className={inputClass} />
+            <input name="telephone" value={form.telephone} onChange={handleChange} className={inputClass} />
           </div>
-
           <div>
             <label className={labelClass}>Email</label>
-            <input name="email_contact" value={form.email_contact} onChange={handleChange}
-              placeholder="contact@entreprise.fr" className={inputClass} />
+            <input name="email_contact" value={form.email_contact} onChange={handleChange} className={inputClass} />
           </div>
-
           <div>
             <label className={labelClass}>Site web</label>
-            <input name="site_web" value={form.site_web} onChange={handleChange}
-              placeholder="https://www.entreprise.fr" className={inputClass} />
+            <input name="site_web" value={form.site_web} onChange={handleChange} className={inputClass} />
           </div>
-
           <div>
             <label className={labelClass}>Valeur estimée (€)</label>
-            <input name="valeur_estimee" value={form.valeur_estimee} onChange={handleChange}
-              type="number" placeholder="3500" className={inputClass} />
+            <input name="valeur_estimee" value={form.valeur_estimee} onChange={handleChange} type="number" className={inputClass} />
+          </div>
+          <div>
+            <label className={labelClass}>Score (0-10)</label>
+            <input name="score" value={form.score} onChange={handleChange} type="number" min="0" max="10" className={inputClass} />
           </div>
         </div>
       </div>
@@ -178,10 +190,7 @@ export default function NouveauProspectPage() {
       <div className="rounded-xl p-6 space-y-4"
         style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
         <h3 className="text-xs font-semibold tracking-widest text-white/40">NOTES</h3>
-        <textarea name="notes" value={form.notes} onChange={handleChange}
-          placeholder="Informations complémentaires, contexte, observations..."
-          rows={4}
-          className={inputClass + ' resize-none'} />
+        <textarea name="notes" value={form.notes} onChange={handleChange} rows={4} className={inputClass + ' resize-none'} />
       </div>
     </div>
   )

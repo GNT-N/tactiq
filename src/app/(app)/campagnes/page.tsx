@@ -126,7 +126,7 @@ export default function CampagnesPage() {
               <div key={c.id}
                 className="rounded-xl p-5 space-y-4 cursor-pointer transition-all duration-200 hover:scale-[1.01]"
                 style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}
-                onClick={() => router.push(`/dashboard/campagnes/${c.id}`)}>
+                onClick={() => router.push(`/campagnes/${c.id}`)}>
 
                 {/* Header card */}
                 <div className="flex items-start justify-between">

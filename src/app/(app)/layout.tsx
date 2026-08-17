@@ -8,11 +8,11 @@ import { ThemeProvider, useTheme } from '@/components/ThemeProvider'
 import { themes, variablesCss, type ThemeKey } from '@/lib/themes'
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: '⬡' },
-  { href: '/dashboard/prospects', label: 'Prospects', icon: '◎' },
-  { href: '/dashboard/campagnes', label: 'Campagnes', icon: '◈' },
-  { href: '/dashboard/emails', label: 'Emails', icon: '◇' },
-  { href: '/dashboard/parametres', label: 'Paramètres', icon: '◉' },
+  { href: '/', label: 'Dashboard', icon: '⬡' },
+  { href: '/prospects', label: 'Prospects', icon: '◎' },
+  { href: '/campagnes', label: 'Campagnes', icon: '◈' },
+  { href: '/emails', label: 'Emails', icon: '◇' },
+  { href: '/parametres', label: 'Paramètres', icon: '◉' },
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
