@@ -20,6 +20,10 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22"
+      # Identifiant Supabase du propriétaire : sans lui, toutes les routes
+      # authentifiées répondent 401 (fermé par défaut, volontairement).
+      - key: TACTIQ_USER_ID
+        sync: false
       - key: DATABASE_URL
         sync: false
       - key: NEXT_PUBLIC_SUPABASE_URL

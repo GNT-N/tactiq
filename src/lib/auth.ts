@@ -8,14 +8,27 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// Vérifie le Bearer token de la requête. Null si absent ou invalide.
+// Outil mono-utilisateur : seul ce compte a accès, même si d'autres comptes
+// Supabase existent. Volontairement fermé par défaut — sans la variable,
+// tout est refusé plutôt que d'ouvrir silencieusement.
+const PROPRIETAIRE = process.env.TACTIQ_USER_ID
+
+// Vérifie le Bearer token de la requête. Null si absent, invalide, ou si le
+// compte n'est pas celui du propriétaire.
 export async function getUser(request: Request): Promise<User | null> {
   const authHeader = request.headers.get('Authorization')
   if (!authHeader) return null
 
   const token = authHeader.replace('Bearer ', '')
   const { data: { user }, error } = await supabaseAdmin.auth.getUser(token)
-  if (error) return null
+  if (error || !user) return null
+
+  if (!PROPRIETAIRE) {
+    console.error('TACTIQ_USER_ID non définie : tous les accès sont refusés.')
+    return null
+  }
+
+  if (user.id !== PROPRIETAIRE) return null
 
   return user
 }

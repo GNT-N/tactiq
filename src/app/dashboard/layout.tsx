@@ -31,11 +31,16 @@ function DashboardChrome({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
+  // Sans session, on ne laisse même pas s'afficher la coquille du dashboard.
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) setUserEmail(data.user.email || '')
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) {
+        router.replace('/login')
+        return
+      }
+      setUserEmail(data.session.user.email || '')
     })
-  }, [])
+  }, [router])
 
   // Background canvas animé
   useEffect(() => {
