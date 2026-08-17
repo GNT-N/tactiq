@@ -48,9 +48,9 @@ export default function EmailsPage() {
           <button key={s} onClick={() => setFiltre(s)}
             className="px-3 py-2 rounded-lg text-xs font-medium transition-all"
             style={{
-              backgroundColor: filtre === s ? `${statutConfig[s]?.color || '#00f5ff'}30` : 'rgba(255,255,255,0.05)',
-              color: filtre === s ? (statutConfig[s]?.color || '#00f5ff') : 'rgba(255,255,255,0.4)',
-              border: `1px solid ${filtre === s ? (statutConfig[s]?.color || '#00f5ff') + '60' : 'rgba(255,255,255,0.08)'}`,
+              backgroundColor: filtre === s ? `${statutConfig[s]?.color || 'var(--theme-primary)'}30` : 'rgba(255,255,255,0.05)',
+              color: filtre === s ? (statutConfig[s]?.color || 'var(--theme-primary)') : 'rgba(255,255,255,0.4)',
+              border: `1px solid ${filtre === s ? (statutConfig[s]?.color || 'var(--theme-primary)') + '60' : 'rgba(255,255,255,0.08)'}`,
             }}>
             {s === 'tous' ? 'Tous' : statutConfig[s]?.label}
           </button>
@@ -77,12 +77,12 @@ export default function EmailsPage() {
                 backgroundColor: i % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent',
                 borderBottom: '1px solid rgba(255,255,255,0.04)',
               }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(0,245,255,0.04)')}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--theme-primary-04)')}
               onMouseLeave={e => (e.currentTarget.style.backgroundColor = i % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent')}
               onClick={() => setSelected(email)}>
 
               <div className="w-9 h-9 rounded-lg flex items-center justify-center text-sm flex-shrink-0"
-                style={{ backgroundColor: 'rgba(0,245,255,0.1)', color: '#00f5ff' }}>
+                style={{ backgroundColor: 'var(--theme-primary-10)', color: 'var(--theme-primary)' }}>
                 ◇
               </div>
 
@@ -108,7 +108,7 @@ export default function EmailsPage() {
           style={{ backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)' }}
           onClick={() => setSelected(null)}>
           <div className="w-full max-w-2xl rounded-2xl p-6 space-y-4"
-            style={{ backgroundColor: '#0a0f1e', border: '1px solid rgba(0,245,255,0.2)' }}
+            style={{ backgroundColor: 'var(--theme-card)', border: '1px solid var(--theme-primary-20)' }}
             onClick={e => e.stopPropagation()}>
 
             <div className="flex items-center justify-between">
@@ -129,7 +129,7 @@ export default function EmailsPage() {
             {selected.prospect && (
               <button
                 onClick={() => router.push(`/dashboard/prospects/${selected.prospect.id}`)}
-                className="text-cyan-400 text-sm hover:text-cyan-300 transition">
+                className="text-[var(--theme-primary)] text-sm hover:opacity-80 transition">
                 → Voir le prospect
               </button>
             )}

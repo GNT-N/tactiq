@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { apiFetch } from '@/lib/api'
 import EmailGeneratorModal from '@/components/EmailGeneratorModal'
+import type { Signal } from '@/lib/analyse-site'
 
 const statutConfig: Record<string, { label: string, color: string }> = {
   nouveau:    { label: 'Nouveau',    color: '#64748b' },
@@ -27,6 +28,7 @@ const interactionIcon: Record<string, string> = {
   note:          '◈',
   statut_change: '⬡',
   relance:       '↺',
+  analyse_ia:    '⚡',
 }
 
 
@@ -41,8 +43,10 @@ export default function ProspectDetailPage() {
   const [showEmailModal, setShowEmailModal] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [analysing, setAnalysing] = useState(false)
+  const [analyseErreur, setAnalyseErreur] = useState('')
 
-  useEffect(() => {
+  const chargerProspect = () =>
     apiFetch(`/api/prospects/detail/${id}`)
       .then(res => {
         if (res.status === 404) { setNotFound(true); setLoading(false); return null }
@@ -53,6 +57,10 @@ export default function ProspectDetailPage() {
         setLoading(false)
       })
       .catch(() => setLoading(false))
+
+  useEffect(() => {
+    chargerProspect()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
   const supprimerProspect = async () => {
@@ -60,6 +68,19 @@ export default function ProspectDetailPage() {
   await apiFetch(`/api/prospects/detail/${id}`, { method: 'DELETE' })
   router.push('/dashboard/prospects')
 }
+
+  const analyser = () => {
+    setAnalysing(true)
+    setAnalyseErreur('')
+
+    apiFetch(`/api/prospects/detail/${id}/analyser`, { method: 'POST' })
+      .then(res => {
+        if (!res.ok) throw new Error('analyse')
+        return chargerProspect()
+      })
+      .catch(() => setAnalyseErreur("L'analyse a échoué"))
+      .finally(() => setAnalysing(false))
+  }
 
   const ajouterNote = async () => {
     if (!note.trim()) return
@@ -72,9 +93,7 @@ export default function ProspectDetailPage() {
       })
     })
     setNote('')
-    apiFetch(`/api/prospects/detail/${id}`)
-      .then(res => res.json())
-      .then(data => setProspect(data))
+    chargerProspect()
   }
 
   if (loading) return (
@@ -87,7 +106,7 @@ export default function ProspectDetailPage() {
     <div className="text-center py-20 text-white/40">
       <p className="text-4xl mb-4">◎</p>
       <p>Prospect introuvable</p>
-      <Link href="/dashboard/prospects" className="text-cyan-400 text-sm mt-2 inline-block">← Retour aux prospects</Link>
+      <Link href="/dashboard/prospects" className="text-[var(--theme-primary)] text-sm mt-2 inline-block">← Retour aux prospects</Link>
     </div>
   )
 
@@ -101,6 +120,7 @@ export default function ProspectDetailPage() {
         <EmailGeneratorModal
           prospect={prospect}
           onClose={() => setShowEmailModal(false)}
+          onSaved={chargerProspect}
         />
       )}
 
@@ -109,7 +129,7 @@ export default function ProspectDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)' }}>
           <div className="w-full max-w-md rounded-2xl p-6 space-y-4"
-            style={{ backgroundColor: '#0a0f1e', border: '1px solid rgba(239,68,68,0.3)' }}>
+            style={{ backgroundColor: 'var(--theme-card)', border: '1px solid rgba(239,68,68,0.3)' }}>
             <h3 className="text-lg font-bold text-white">Supprimer ce prospect ?</h3>
             <p className="text-white/60 text-sm">
               Cette action est irréversible. Toutes les interactions et emails liés seront aussi supprimés.
@@ -139,9 +159,16 @@ export default function ProspectDetailPage() {
           </button>
           <div className="flex gap-2">
             <button
+              onClick={analyser}
+              disabled={analysing}
+              className="px-3 py-2 rounded-lg text-xs font-semibold transition hover:opacity-80 disabled:opacity-50"
+              style={{ border: '1px solid var(--theme-primary-30)', color: 'var(--theme-primary)' }}>
+              {analysing ? 'Analyse...' : '⚡ Analyser le site'}
+            </button>
+            <button
               onClick={() => setShowEmailModal(true)}
               className="px-3 py-2 rounded-lg text-xs font-semibold text-black transition hover:opacity-80"
-              style={{ background: 'linear-gradient(135deg, #00f5ff, #bf00ff)' }}>
+              style={{ background: 'linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))' }}>
               ✉ Email IA
             </button>
             <button
@@ -196,19 +223,19 @@ export default function ProspectDetailPage() {
               {prospect.telephone && (
                 <div className="flex justify-between">
                   <span className="text-white/40">Téléphone</span>
-                  <a href={`tel:${prospect.telephone}`} className="text-cyan-400 hover:text-cyan-300">{prospect.telephone}</a>
+                  <a href={`tel:${prospect.telephone}`} className="text-[var(--theme-primary)] hover:opacity-80">{prospect.telephone}</a>
                 </div>
               )}
               {prospect.email_contact && (
                 <div className="flex justify-between">
                   <span className="text-white/40">Email</span>
-                  <a href={`mailto:${prospect.email_contact}`} className="text-cyan-400 hover:text-cyan-300 truncate max-w-32">{prospect.email_contact}</a>
+                  <a href={`mailto:${prospect.email_contact}`} className="text-[var(--theme-primary)] hover:opacity-80 truncate max-w-32">{prospect.email_contact}</a>
                 </div>
               )}
               {prospect.site_web && (
                 <div className="flex justify-between">
                   <span className="text-white/40">Site web</span>
-                  <a href={prospect.site_web} target="_blank" className="text-cyan-400 hover:text-cyan-300 truncate max-w-32">{prospect.site_web}</a>
+                  <a href={prospect.site_web} target="_blank" className="text-[var(--theme-primary)] hover:opacity-80 truncate max-w-32">{prospect.site_web}</a>
                 </div>
               )}
               {prospect.adresse && (
@@ -242,11 +269,11 @@ export default function ProspectDetailPage() {
 
           {prospect.prochaine_action && (
             <div className="rounded-xl p-4"
-              style={{ background: 'rgba(0,245,255,0.05)', border: '1px solid rgba(0,245,255,0.15)' }}>
-              <h3 className="text-xs font-semibold tracking-widest text-cyan-400/60 mb-2">PROCHAINE ACTION</h3>
+              style={{ background: 'var(--theme-primary-05)', border: '1px solid var(--theme-primary-15)' }}>
+              <h3 className="text-xs font-semibold tracking-widest text-[var(--theme-primary-60)] mb-2">PROCHAINE ACTION</h3>
               <p className="text-sm text-white">{prospect.prochaine_action}</p>
               {prospect.prochaine_action_date && (
-                <p className="text-xs text-cyan-400/60 mt-1">
+                <p className="text-xs text-[var(--theme-primary-60)] mt-1">
                   {new Date(prospect.prochaine_action_date).toLocaleDateString('fr-FR')}
                 </p>
               )}
@@ -256,6 +283,60 @@ export default function ProspectDetailPage() {
 
         {/* Colonne droite */}
         <div className="lg:col-span-2 space-y-4">
+
+          {/* Analyse du site */}
+          <div className="rounded-xl p-5"
+            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-semibold tracking-widest text-white/40">ANALYSE DU SITE</h3>
+              {prospect.analyse_json?.analyse_le && (
+                <span className="text-xs text-white/25">
+                  {new Date(prospect.analyse_json.analyse_le).toLocaleDateString('fr-FR')}
+                </span>
+              )}
+            </div>
+
+            {analyseErreur && (
+              <p className="text-red-400 text-sm mb-3">{analyseErreur}</p>
+            )}
+
+            {!prospect.analyse_json ? (
+              <p className="text-white/20 text-sm">
+                Pas encore analysé — lance « Analyser le site » pour calculer le score.
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {prospect.resume_ia && (
+                  <p className="text-sm text-white/70">{prospect.resume_ia}</p>
+                )}
+
+                {prospect.analyse_json.url && (
+                  <p className="text-xs text-white/30 break-all">
+                    {prospect.analyse_json.url}
+                    {prospect.analyse_json.temps_reponse_ms != null &&
+                      ` · ${(prospect.analyse_json.temps_reponse_ms / 1000).toFixed(1)} s`}
+                  </p>
+                )}
+
+                {prospect.analyse_json.signaux?.length > 0 ? (
+                  <div className="space-y-2">
+                    {prospect.analyse_json.signaux.map((signal: Signal) => (
+                      <div key={signal.code} className="flex items-start gap-2 text-sm">
+                        <span style={{ color: scoreColor(Math.min(10, signal.poids * 1.5)) }}>▲</span>
+                        <span className="text-white/70 flex-1">{signal.label}</span>
+                        <span className="text-white/25 text-xs">+{signal.poids}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-white/30 text-sm">
+                    Aucun signal de besoin détecté : le site tient la route.
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
           <div className="rounded-xl p-5"
             style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
             <h3 className="text-xs font-semibold tracking-widest text-white/40 mb-3">NOTES</h3>
@@ -276,7 +357,7 @@ export default function ProspectDetailPage() {
                   <div key={interaction.id} className="flex gap-3">
                     <div className="flex flex-col items-center">
                       <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm flex-shrink-0"
-                        style={{ backgroundColor: 'rgba(0,245,255,0.1)', color: '#00f5ff' }}>
+                        style={{ backgroundColor: 'var(--theme-primary-10)', color: 'var(--theme-primary)' }}>
                         {interactionIcon[interaction.type] || '◎'}
                       </div>
                       {i < prospect.interactions.length - 1 && (
@@ -307,11 +388,11 @@ export default function ProspectDetailPage() {
                   onChange={e => setNote(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && ajouterNote()}
                   placeholder="Ajouter une note ou interaction..."
-                  className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-cyan-500/50 transition"
+                  className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[var(--theme-primary-50)] transition"
                 />
                 <button onClick={ajouterNote}
                   className="px-4 py-2 rounded-lg text-sm font-semibold text-black"
-                  style={{ background: 'linear-gradient(135deg, #00f5ff, #bf00ff)' }}>
+                  style={{ background: 'linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))' }}>
                   +
                 </button>
               </div>

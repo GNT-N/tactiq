@@ -68,7 +68,7 @@ export default function ProspectsPage() {
         <button
           onClick={() => router.push('/dashboard/prospects/nouveau')}
           className="px-4 py-2 rounded-lg text-sm font-semibold text-black transition-all hover:opacity-80"
-          style={{ background: 'linear-gradient(135deg, #00f5ff, #bf00ff)' }}>
+          style={{ background: 'linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))' }}>
           + Nouveau prospect
         </button>
       </div>
@@ -80,16 +80,16 @@ export default function ProspectsPage() {
           placeholder="Rechercher un prospect..."
           value={recherche}
           onChange={e => setRecherche(e.target.value)}
-          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-white/30 text-sm focus:outline-none focus:border-cyan-500/50 transition"
+          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-white/30 text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition"
         />
         <div className="flex gap-2 flex-wrap">
           {STATUTS.map(s => (
             <button key={s} onClick={() => setFiltreStatut(s)}
               className="px-3 py-2 rounded-lg text-xs font-medium transition-all capitalize"
               style={{
-                backgroundColor: filtreStatut === s ? `${statutConfig[s]?.color || '#00f5ff'}30` : 'rgba(255,255,255,0.05)',
-                color: filtreStatut === s ? (statutConfig[s]?.color || '#00f5ff') : 'rgba(255,255,255,0.4)',
-                border: `1px solid ${filtreStatut === s ? (statutConfig[s]?.color || '#00f5ff') + '60' : 'rgba(255,255,255,0.08)'}`,
+                backgroundColor: filtreStatut === s ? `${statutConfig[s]?.color || 'var(--theme-primary)'}30` : 'rgba(255,255,255,0.05)',
+                color: filtreStatut === s ? (statutConfig[s]?.color || 'var(--theme-primary)') : 'rgba(255,255,255,0.4)',
+                border: `1px solid ${filtreStatut === s ? (statutConfig[s]?.color || 'var(--theme-primary)') + '60' : 'rgba(255,255,255,0.08)'}`,
               }}>
               {s === 'tous' ? 'Tous' : statutConfig[s]?.label}
             </button>
@@ -119,7 +119,7 @@ export default function ProspectsPage() {
             <p className="text-4xl">◎</p>
             <p className="text-white/30 text-sm">Aucun prospect trouvé</p>
             <button onClick={() => router.push('/dashboard/prospects/nouveau')}
-              className="text-cyan-400 text-sm hover:text-cyan-300 transition">
+              className="text-[var(--theme-primary)] text-sm hover:opacity-80 transition">
               + Ajouter votre premier prospect
             </button>
           </div>
@@ -132,7 +132,7 @@ export default function ProspectsPage() {
 
             {/* Vue desktop */}
             <div className="hidden lg:grid grid-cols-12 gap-4 px-5 py-4 cursor-pointer transition-all duration-200 group"
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(0,245,255,0.04)')}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--theme-primary-04)')}
               onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
               onClick={() => router.push(`/dashboard/prospects/${p.id}`)}>
 
@@ -141,7 +141,7 @@ export default function ProspectsPage() {
                   style={{ backgroundColor: `${scoreColor(p.score)}20`, color: scoreColor(p.score) }}>
                   {p.nom_entreprise?.charAt(0)}
                 </div>
-                <span className="text-white text-sm font-medium truncate group-hover:text-cyan-400 transition-colors">
+                <span className="text-white text-sm font-medium truncate group-hover:text-[var(--theme-primary)] transition-colors">
                   {p.nom_entreprise}
                 </span>
               </div>
@@ -158,7 +158,7 @@ export default function ProspectsPage() {
                   className="text-xs px-2 py-1.5 rounded-lg border-0 outline-none cursor-pointer w-full"
                   style={{ backgroundColor: `${statutConfig[p.statut]?.color}25`, color: statutConfig[p.statut]?.color }}>
                   {Object.entries(statutConfig).map(([val, cfg]) => (
-                    <option key={val} value={val} style={{ backgroundColor: '#0a0f1e', color: 'white' }}>{cfg.label}</option>
+                    <option key={val} value={val} style={{ backgroundColor: 'var(--theme-card)', color: 'white' }}>{cfg.label}</option>
                   ))}
                 </select>
               </div>

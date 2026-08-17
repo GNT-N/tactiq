@@ -2,11 +2,9 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 
 export default function LoginPage() {
-  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -21,17 +19,18 @@ export default function LoginPage() {
       password
     })
 
-    console.log('data:', data)
-    console.log('error:', signInError)
-
     if (signInError) {
       setError('Email ou mot de passe incorrect')
       setLoading(false)
       return
     }
 
-    if (data.user) {
-      console.log('redirect vers dashboard')
+    if (data.session) {
+      // Crée le profil s'il manque encore (compte confirmé par email après coup)
+      await fetch('/api/user/create', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${data.session.access_token}` }
+      })
       window.location.href = '/dashboard'
     }
   }

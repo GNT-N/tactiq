@@ -1,24 +1,11 @@
 import { prisma } from '@/lib/prisma'
-import { createClient } from '@supabase/supabase-js'
+import { getUser, unauthorized } from '@/lib/auth'
 import { NextResponse } from 'next/server'
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
-async function getUser(request: Request) {
-  const authHeader = request.headers.get('Authorization')
-  if (!authHeader) return null
-  const token = authHeader.replace('Bearer ', '')
-  const { data: { user } } = await supabaseAdmin.auth.getUser(token)
-  return user
-}
 
 export async function GET(request: Request) {
   try {
     const user = await getUser(request)
-    if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    if (!user) return unauthorized()
 
     const campagnes = await prisma.campagne.findMany({
       where: { user_id: user.id },
@@ -31,6 +18,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(campagnes)
   } catch (error) {
+    console.error('Erreur campagnes:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
@@ -38,7 +26,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const user = await getUser(request)
-    if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    if (!user) return unauthorized()
 
     const body = await request.json()
 

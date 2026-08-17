@@ -35,6 +35,9 @@ export default function CampagneDetailPage() {
   const [notFound, setNotFound] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [analyse, setAnalyse] = useState<{ encours: boolean, traites: number, restants: number, erreur: string }>(
+    { encours: false, traites: 0, restants: 0, erreur: '' }
+  )
 
   const supprimerCampagne = async () => {
     setDeleting(true)
@@ -42,7 +45,7 @@ export default function CampagneDetailPage() {
     router.push('/dashboard/campagnes')
   }
 
-  useEffect(() => {
+  const chargerCampagne = () =>
     apiFetch(`/api/campagnes/${id}`)
       .then(res => {
         if (res.status === 404) { setNotFound(true); setLoading(false); return null }
@@ -53,7 +56,39 @@ export default function CampagneDetailPage() {
         setLoading(false)
       })
       .catch(() => setLoading(false))
+
+  useEffect(() => {
+    chargerCampagne()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
+
+  // Le serveur ne traite qu'un lot borné par appel : on rappelle jusqu'à
+  // épuisement, en s'arrêtant si un tour n'avance plus.
+  const analyserLot = async () => {
+    setAnalyse({ encours: true, traites: 0, restants: 0, erreur: '' })
+    let cumul = 0
+
+    try {
+      for (;;) {
+        const res = await apiFetch('/api/prospects/analyser-lot', {
+          method: 'POST',
+          body: JSON.stringify({ campagne_id: id })
+        })
+        if (!res.ok) throw new Error('lot')
+
+        const data = await res.json()
+        cumul += data.traites
+        setAnalyse({ encours: true, traites: cumul, restants: data.restants, erreur: '' })
+
+        if (data.restants === 0 || data.traites === 0) break
+      }
+
+      await chargerCampagne()
+      setAnalyse(prev => ({ ...prev, encours: false }))
+    } catch {
+      setAnalyse(prev => ({ ...prev, encours: false, erreur: "L'analyse en lot a échoué" }))
+    }
+  }
 
   const updateStatut = async (statut: string) => {
     setCampagne((prev: any) => ({ ...prev, statut }))
@@ -73,7 +108,7 @@ export default function CampagneDetailPage() {
     <div className="text-center py-20 text-white/40">
       <p className="text-4xl mb-4">◈</p>
       <p>Campagne introuvable</p>
-      <Link href="/dashboard/campagnes" className="text-cyan-400 text-sm mt-2 inline-block">← Retour aux campagnes</Link>
+      <Link href="/dashboard/campagnes" className="text-[var(--theme-primary)] text-sm mt-2 inline-block">← Retour aux campagnes</Link>
     </div>
   )
 
@@ -87,7 +122,7 @@ export default function CampagneDetailPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
           style={{ backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(4px)' }}>
           <div className="w-full max-w-md rounded-2xl p-6 space-y-4"
-            style={{ backgroundColor: '#0a0f1e', border: '1px solid rgba(239,68,68,0.3)' }}>
+            style={{ backgroundColor: 'var(--theme-card)', border: '1px solid rgba(239,68,68,0.3)' }}>
             <h3 className="text-lg font-bold text-white">Supprimer cette campagne ?</h3>
             <p className="text-white/60 text-sm">
               Les prospects de cette campagne ne seront pas supprimés, ils seront simplement détachés.
@@ -106,6 +141,12 @@ export default function CampagneDetailPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {analyse.erreur && (
+        <p className="text-red-400 text-sm bg-red-950/50 border border-red-800/50 rounded-lg px-4 py-3">
+          {analyse.erreur}
+        </p>
       )}
 
       {/* Header */}
@@ -127,6 +168,15 @@ export default function CampagneDetailPage() {
                 {campagneStatutConfig[st].label}
               </button>
             ))}
+            <button
+              onClick={analyserLot}
+              disabled={analyse.encours}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold transition hover:opacity-80 disabled:opacity-50"
+              style={{ border: '1px solid var(--theme-primary-30)', color: 'var(--theme-primary)' }}>
+              {analyse.encours
+                ? `Analyse... ${analyse.traites} traités${analyse.restants ? `, ${analyse.restants} restants` : ''}`
+                : '⚡ Analyser les prospects'}
+            </button>
             <button
               onClick={() => setShowDeleteConfirm(true)}
               className="px-3 py-1.5 rounded-lg text-xs text-red-400 hover:text-red-300 transition"
@@ -152,8 +202,8 @@ export default function CampagneDetailPage() {
           { label: 'Pipeline', value: campagne.prospects?.reduce((acc: number, p: any) => acc + (p.valeur_estimee || 0), 0) || 0, suffix: '€', icon: '◇' },
         ].map((stat, i) => (
           <div key={i} className="rounded-xl p-4"
-            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(0,245,255,0.1)' }}>
-            <div className="text-lg mb-1" style={{ color: '#00f5ff' }}>{stat.icon}</div>
+            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--theme-primary-10)' }}>
+            <div className="text-lg mb-1" style={{ color: 'var(--theme-primary)' }}>{stat.icon}</div>
             <div className="text-2xl font-black text-white">{stat.value}{stat.suffix || ''}</div>
             <div className="text-xs text-white/40 mt-1">{stat.label}</div>
           </div>
@@ -172,7 +222,7 @@ export default function CampagneDetailPage() {
           <button
             onClick={() => router.push('/dashboard/prospects/nouveau')}
             className="text-xs px-3 py-1.5 rounded-lg font-medium text-black"
-            style={{ background: 'linear-gradient(135deg, #00f5ff, #bf00ff)' }}>
+            style={{ background: 'linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))' }}>
             + Ajouter
           </button>
         </div>
@@ -189,7 +239,7 @@ export default function CampagneDetailPage() {
                 backgroundColor: i % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent',
                 borderBottom: '1px solid rgba(255,255,255,0.04)',
               }}
-              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(0,245,255,0.04)')}
+              onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'var(--theme-primary-04)')}
               onMouseLeave={e => (e.currentTarget.style.backgroundColor = i % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent')}
               onClick={() => router.push(`/dashboard/prospects/${p.id}`)}>
 

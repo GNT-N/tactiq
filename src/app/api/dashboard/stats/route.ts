@@ -1,32 +1,26 @@
 import { prisma } from '@/lib/prisma'
-import { createClient } from '@supabase/supabase-js'
+import { getUser, unauthorized } from '@/lib/auth'
 import { NextResponse } from 'next/server'
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
 
 export async function GET(request: Request) {
   try {
-    const authHeader = request.headers.get('Authorization')
-    if (!authHeader) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user } } = await supabaseAdmin.auth.getUser(token)
-    if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    const user = await getUser(request)
+    if (!user) return unauthorized()
 
     const prospects = await prisma.prospect.findMany({
       where: { user_id: user.id },
       select: { statut: true, valeur_estimee: true, created_at: true }
     })
 
-    const emails = await prisma.email.findMany({
-      where: { prospect: { user_id: user.id } },
-      select: { id: true }
+    // Un email "généré" n'est pas envoyé : le KPI ne compte que ce qui est parti.
+    const emailsEnvoyes = await prisma.email.count({
+      where: {
+        prospect: { user_id: user.id },
+        statut: { in: ['envoye', 'ouvert', 'repondu'] }
+      }
     })
 
     const totalProspects = prospects.length
-    const emailsEnvoyes = emails.length
     const convertis = prospects.filter(p => p.statut === 'converti').length
     const tauxConversion = totalProspects > 0 ? Math.round((convertis / totalProspects) * 100) : 0
     const pipeline = prospects.reduce((acc, p) => acc + (p.valeur_estimee || 0), 0)

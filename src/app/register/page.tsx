@@ -11,11 +11,13 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [info, setInfo] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleRegister = async () => {
     setLoading(true)
     setError('')
+    setInfo('')
 
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
@@ -31,19 +33,20 @@ export default function RegisterPage() {
       return
     }
 
-    if (data.user) {
-      // Créer le profil User en base via API
+    if (data.session) {
+      // Le profil est créé côté serveur à partir du token, pas du body
       await fetch('/api/user/create', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: data.user.id,
-          email: data.user.email,
-          nom
-        })
+        headers: { Authorization: `Bearer ${data.session.access_token}` }
       })
       router.push('/dashboard')
+      return
     }
+
+    // Pas de session : confirmation par email activée côté Supabase.
+    // Le profil sera créé à la première connexion.
+    setInfo('Compte créé. Confirme ton adresse par email pour te connecter.')
+    setLoading(false)
   }
 
   return (
@@ -94,6 +97,12 @@ export default function RegisterPage() {
             {error && (
               <p className="text-red-400 text-sm bg-red-950 border border-red-800 rounded-lg px-4 py-2">
                 {error}
+              </p>
+            )}
+
+            {info && (
+              <p className="text-cyan-400 text-sm bg-cyan-950 border border-cyan-800 rounded-lg px-4 py-2">
+                {info}
               </p>
             )}
 

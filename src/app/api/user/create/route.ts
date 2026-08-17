@@ -1,39 +1,37 @@
 import { prisma } from '@/lib/prisma'
+import { getUser, unauthorized } from '@/lib/auth'
 import { NextResponse } from 'next/server'
 
+// Idempotent : crée le profil s'il manque, sinon renvoie l'existant.
+// id et email viennent du token, jamais du body.
 export async function POST(request: Request) {
   try {
-    const { id, email, nom } = await request.json()
+    const user = await getUser(request)
+    if (!user) return unauthorized()
+    if (!user.email) return NextResponse.json({ error: 'Email manquant' }, { status: 400 })
 
-    if (!id || !email) {
-      return NextResponse.json(
-        { error: 'id et email requis' },
-        { status: 400 }
-      )
-    }
-
-    // Vérifie si l'utilisateur existe déjà
     const existingUser = await prisma.user.findUnique({
-      where: { id }
+      where: { id: user.id }
     })
 
     if (existingUser) {
       return NextResponse.json(existingUser)
     }
 
-    // Crée le profil utilisateur
-    const user = await prisma.user.create({
+    const nom = typeof user.user_metadata?.nom === 'string' ? user.user_metadata.nom : null
+
+    const profile = await prisma.user.create({
       data: {
-        id,
-        email,
-        nom: nom || null,
+        id: user.id,
+        email: user.email,
+        nom,
         plan: 'free',
         theme: 'cyberpunk',
         dark_mode: true
       }
     })
 
-    return NextResponse.json(user)
+    return NextResponse.json(profile)
   } catch (error) {
     console.error('Erreur création user:', error)
     return NextResponse.json(

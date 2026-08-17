@@ -1,26 +1,30 @@
 import Groq from 'groq-sdk'
-import { createClient } from '@supabase/supabase-js'
+import { prisma } from '@/lib/prisma'
+import { getUser, unauthorized } from '@/lib/auth'
 import { NextResponse } from 'next/server'
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
 export async function POST(request: Request) {
   try {
-    const authHeader = request.headers.get('Authorization')
-    if (!authHeader) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user } } = await supabaseAdmin.auth.getUser(token)
-    if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    const user = await getUser(request)
+    if (!user) return unauthorized()
 
-    const { prospect } = await request.json()
+    const { prospect_id } = await request.json()
+
+    if (!prospect_id) {
+      return NextResponse.json({ error: 'prospect_id requis' }, { status: 400 })
+    }
+
+    // Relu en base : le contenu du prompt ne vient jamais du client.
+    const prospect = await prisma.prospect.findFirst({
+      where: { id: prospect_id, user_id: user.id }
+    })
+
+    if (!prospect) return NextResponse.json({ error: 'Introuvable' }, { status: 404 })
 
     const prompt = `Tu es un expert en prospection commerciale pour freelances web.
-    
+
 Génère un email de prospection professionnel, personnalisé et convaincant pour ce prospect :
 
 Entreprise : ${prospect.nom_entreprise}
@@ -54,11 +58,11 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format exact :
     })
 
     const content = completion.choices[0]?.message?.content || ''
-    
+
     // Parse le JSON
     const jsonMatch = content.match(/\{[\s\S]*\}/)
     if (!jsonMatch) return NextResponse.json({ error: 'Erreur génération' }, { status: 500 })
-    
+
     const emailData = JSON.parse(jsonMatch[0])
 
     return NextResponse.json({

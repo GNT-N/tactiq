@@ -54,7 +54,7 @@ export default function CampagnesPage() {
         </div>
         <button onClick={() => setShowForm(!showForm)}
           className="px-4 py-2 rounded-lg text-sm font-semibold text-black transition hover:opacity-80"
-          style={{ background: 'linear-gradient(135deg, #00f5ff, #bf00ff)' }}>
+          style={{ background: 'linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))' }}>
           + Nouvelle campagne
         </button>
       </div>
@@ -62,7 +62,7 @@ export default function CampagnesPage() {
       {/* Formulaire création */}
       {showForm && (
         <div className="rounded-xl p-6 space-y-4"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(0,245,255,0.2)' }}>
+          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--theme-primary-20)' }}>
           <h3 className="text-sm font-semibold text-white/60 tracking-widest">NOUVELLE CAMPAGNE</h3>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -70,15 +70,15 @@ export default function CampagnesPage() {
               <label className="text-xs text-white/40 mb-1.5 block">Nom *</label>
               <input value={form.nom} onChange={e => setForm(p => ({ ...p, nom: e.target.value }))}
                 placeholder="Restaurants Lyon" 
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/50 transition" />
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition" />
             </div>
             <div>
               <label className="text-xs text-white/40 mb-1.5 block">Secteur</label>
               <select value={form.secteur_id} onChange={e => setForm(p => ({ ...p, secteur_id: e.target.value }))}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/50 transition">
-                <option value="" style={{ backgroundColor: '#0a0f1e' }}>Aucun secteur</option>
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition">
+                <option value="" style={{ backgroundColor: 'var(--theme-card)' }}>Aucun secteur</option>
                 {secteurs.map(s => (
-                  <option key={s.id} value={s.id} style={{ backgroundColor: '#0a0f1e' }}>{s.nom}</option>
+                  <option key={s.id} value={s.id} style={{ backgroundColor: 'var(--theme-card)' }}>{s.nom}</option>
                 ))}
               </select>
             </div>
@@ -88,7 +88,7 @@ export default function CampagnesPage() {
             <label className="text-xs text-white/40 mb-1.5 block">Description</label>
             <input value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
               placeholder="Cibler les restaurants sans site web à Lyon..."
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-cyan-500/50 transition" />
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition" />
           </div>
 
           <div className="flex gap-3">
@@ -99,7 +99,7 @@ export default function CampagnesPage() {
             </button>
             <button onClick={handleCreate} disabled={creating || !form.nom}
               className="px-4 py-2 rounded-lg text-sm font-semibold text-black transition hover:opacity-80 disabled:opacity-50"
-              style={{ background: 'linear-gradient(135deg, #00f5ff, #bf00ff)' }}>
+              style={{ background: 'linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))' }}>
               {creating ? 'Création...' : 'Créer'}
             </button>
           </div>
@@ -114,7 +114,7 @@ export default function CampagnesPage() {
           style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px' }}>
           <p className="text-4xl">◈</p>
           <p className="text-white/30 text-sm">Aucune campagne</p>
-          <button onClick={() => setShowForm(true)} className="text-cyan-400 text-sm hover:text-cyan-300 transition">
+          <button onClick={() => setShowForm(true)} className="text-[var(--theme-primary)] text-sm hover:opacity-80 transition">
             + Créer votre première campagne
           </button>
         </div>
@@ -131,7 +131,7 @@ export default function CampagnesPage() {
                 {/* Header card */}
                 <div className="flex items-start justify-between">
                   <div className="w-10 h-10 rounded-lg flex items-center justify-center text-lg"
-                    style={{ backgroundColor: 'rgba(0,245,255,0.1)', color: '#00f5ff' }}>
+                    style={{ backgroundColor: 'var(--theme-primary-10)', color: 'var(--theme-primary)' }}>
                     ◈
                   </div>
                   <span className="text-xs px-2 py-1 rounded-full font-medium"

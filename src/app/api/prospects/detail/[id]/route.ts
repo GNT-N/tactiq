@@ -1,19 +1,6 @@
 import { prisma } from '@/lib/prisma'
-import { createClient } from '@supabase/supabase-js'
+import { getUser, unauthorized, userOwnsCampagne } from '@/lib/auth'
 import { NextResponse } from 'next/server'
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
-async function getUser(request: Request) {
-  const authHeader = request.headers.get('Authorization')
-  if (!authHeader) return null
-  const token = authHeader.replace('Bearer ', '')
-  const { data: { user } } = await supabaseAdmin.auth.getUser(token)
-  return user
-}
 
 export async function GET(
   request: Request,
@@ -22,7 +9,7 @@ export async function GET(
   try {
     const { id } = await params
     const user = await getUser(request)
-    if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    if (!user) return unauthorized()
 
     const prospect = await prisma.prospect.findFirst({
       where: { id, user_id: user.id },
@@ -36,6 +23,7 @@ export async function GET(
     if (!prospect) return NextResponse.json({ error: 'Introuvable' }, { status: 404 })
     return NextResponse.json(prospect)
   } catch (error) {
+    console.error('Erreur prospect:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
@@ -47,17 +35,32 @@ export async function PATCH(
   try {
     const { id } = await params
     const user = await getUser(request)
-    if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    if (!user) return unauthorized()
 
     const body = await request.json()
 
+    if (body.campagne_id && !(await userOwnsCampagne(body.campagne_id, user.id))) {
+      return NextResponse.json({ error: 'Campagne introuvable' }, { status: 400 })
+    }
+
+    // Whitelist : le body ne doit jamais pouvoir écrire user_id, id ou created_at.
     const prospect = await prisma.prospect.updateMany({
       where: { id, user_id: user.id },
-      data: body
+      data: {
+        statut: body.statut !== undefined ? body.statut : undefined,
+        score: body.score !== undefined ? body.score : undefined,
+        notes: body.notes !== undefined ? body.notes : undefined,
+        valeur_estimee: body.valeur_estimee !== undefined ? body.valeur_estimee : undefined,
+        prochaine_action: body.prochaine_action !== undefined ? body.prochaine_action : undefined,
+        prochaine_action_date: body.prochaine_action_date !== undefined ? body.prochaine_action_date : undefined,
+        campagne_id: body.campagne_id !== undefined ? body.campagne_id : undefined,
+      }
     })
 
+    if (prospect.count === 0) return NextResponse.json({ error: 'Introuvable' }, { status: 404 })
     return NextResponse.json(prospect)
   } catch (error) {
+    console.error('Erreur maj prospect:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
@@ -69,9 +72,13 @@ export async function PUT(
   try {
     const { id } = await params
     const user = await getUser(request)
-    if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    if (!user) return unauthorized()
 
     const body = await request.json()
+
+    if (body.campagne_id && !(await userOwnsCampagne(body.campagne_id, user.id))) {
+      return NextResponse.json({ error: 'Campagne introuvable' }, { status: 400 })
+    }
 
     const prospect = await prisma.prospect.updateMany({
       where: { id, user_id: user.id },
@@ -92,8 +99,10 @@ export async function PUT(
       }
     })
 
+    if (prospect.count === 0) return NextResponse.json({ error: 'Introuvable' }, { status: 404 })
     return NextResponse.json(prospect)
   } catch (error) {
+    console.error('Erreur maj prospect:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
@@ -105,7 +114,7 @@ export async function DELETE(
   try {
     const { id } = await params
     const user = await getUser(request)
-    if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    if (!user) return unauthorized()
 
     await prisma.prospect.deleteMany({
       where: { id, user_id: user.id }
@@ -113,6 +122,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    console.error('Erreur suppression prospect:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }

@@ -4,14 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
-
-const themes = {
-  cyberpunk: { primary: '#00f5ff', secondary: '#bf00ff', bg: '#030712', card: '#0a0f1e', border: '#00f5ff33' },
-  aurora:    { primary: '#f472b6', secondary: '#a855f7', bg: '#0d0718', card: '#130a1f', border: '#f472b633' },
-  fire:      { primary: '#f97316', secondary: '#ef4444', bg: '#0f0805', card: '#1a0e08', border: '#f9731633' },
-  matrix:    { primary: '#22c55e', secondary: '#06b6d4', bg: '#030f05', card: '#071a0a', border: '#22c55e33' },
-  gold:      { primary: '#f5c842', secondary: '#b8860b', bg: '#080600', card: '#110e00', border: '#f5c84233' },
-}
+import { ThemeProvider, useTheme } from '@/components/ThemeProvider'
+import { themes, variablesCss, type ThemeKey } from '@/lib/themes'
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: '⬡' },
@@ -22,14 +16,20 @@ const navItems = [
 ]
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <ThemeProvider>
+      <DashboardChrome>{children}</DashboardChrome>
+    </ThemeProvider>
+  )
+}
+
+function DashboardChrome({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
-  const [theme, setTheme] = useState<keyof typeof themes>('cyberpunk')
+  const { theme, t, setTheme } = useTheme()
   const [userEmail, setUserEmail] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const canvasRef = useRef<HTMLCanvasElement>(null)
-
-  const t = themes[theme]
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -130,7 +130,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen flex relative" style={{ backgroundColor: t.bg }}>
+    <div className="min-h-screen flex relative" style={{ ...variablesCss(theme), backgroundColor: t.bg }}>
 
       {/* Background animé */}
       <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" />
@@ -138,7 +138,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-64 flex flex-col transition-transform duration-300 lg:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
-        style={{ backgroundColor: `${t.card}ee`, borderRight: `1px solid ${t.border}`, backdropFilter: 'blur(20px)' }}>
+        style={{ backgroundColor: `${t.card}ee`, borderRight: '1px solid var(--theme-primary-20)', backdropFilter: 'blur(20px)' }}>
 
         {/* Logo */}
         <div className="p-6 mb-2">
@@ -153,7 +153,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div className="px-6 mb-6">
           <p className="text-xs opacity-40 text-white mb-2 tracking-widest">THÈME</p>
           <div className="flex gap-2">
-            {(Object.keys(themes) as Array<keyof typeof themes>).map(key => (
+            {(Object.keys(themes) as ThemeKey[]).map(key => (
               <button key={key} onClick={() => setTheme(key)}
                 className="w-6 h-6 rounded-full border-2 transition-all duration-200 hover:scale-110"
                 style={{
@@ -162,7 +162,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   transform: theme === key ? 'scale(1.2)' : 'scale(1)',
                   boxShadow: theme === key ? `0 0 8px ${themes[key].primary}` : 'none'
                 }}
-                title={key} />
+                title={themes[key].nom} />
             ))}
           </div>
         </div>
@@ -188,12 +188,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* User */}
         <div className="p-4 m-3 rounded-lg"
-          style={{ backgroundColor: `${t.primary}10`, border: `1px solid ${t.border}` }}>
+          style={{ backgroundColor: `${t.primary}10`, border: '1px solid var(--theme-primary-20)' }}>
           <p className="text-xs text-white opacity-40 mb-1">Connecté</p>
           <p className="text-xs text-white truncate mb-3">{userEmail}</p>
           <button onClick={handleLogout}
             className="text-xs w-full py-1.5 rounded opacity-60 hover:opacity-100 transition text-white"
-            style={{ border: `1px solid ${t.border}` }}>
+            style={{ border: '1px solid var(--theme-primary-20)' }}>
             Déconnexion
           </button>
         </div>
@@ -209,7 +209,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="flex-1 lg:ml-64 min-h-screen relative z-10">
         {/* Topbar mobile */}
         <div className="lg:hidden flex items-center justify-between p-4"
-          style={{ borderBottom: `1px solid ${t.border}`, backdropFilter: 'blur(10px)' }}>
+          style={{ borderBottom: '1px solid var(--theme-primary-20)', backdropFilter: 'blur(10px)' }}>
           <h1 className="text-xl font-black tracking-widest" style={{ color: t.primary }}>TACTIQ</h1>
           <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-white opacity-60 text-2xl">☰</button>
         </div>

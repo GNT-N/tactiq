@@ -1,19 +1,6 @@
 import { prisma } from '@/lib/prisma'
-import { createClient } from '@supabase/supabase-js'
+import { getUser, unauthorized } from '@/lib/auth'
 import { NextResponse } from 'next/server'
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
-async function getUser(request: Request) {
-  const authHeader = request.headers.get('Authorization')
-  if (!authHeader) return null
-  const token = authHeader.replace('Bearer ', '')
-  const { data: { user } } = await supabaseAdmin.auth.getUser(token)
-  return user
-}
 
 export async function GET(
   request: Request,
@@ -22,7 +9,7 @@ export async function GET(
   try {
     const { id } = await params
     const user = await getUser(request)
-    if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    if (!user) return unauthorized()
 
     const campagne = await prisma.campagne.findFirst({
       where: { id, user_id: user.id },
@@ -37,6 +24,7 @@ export async function GET(
     if (!campagne) return NextResponse.json({ error: 'Introuvable' }, { status: 404 })
     return NextResponse.json(campagne)
   } catch (error) {
+    console.error('Erreur campagne:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
@@ -48,17 +36,25 @@ export async function PATCH(
   try {
     const { id } = await params
     const user = await getUser(request)
-    if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    if (!user) return unauthorized()
 
     const body = await request.json()
 
+    // Whitelist : le body ne doit jamais pouvoir écrire user_id, id ou created_at.
     const campagne = await prisma.campagne.updateMany({
       where: { id, user_id: user.id },
-      data: body
+      data: {
+        nom: body.nom !== undefined ? body.nom : undefined,
+        description: body.description !== undefined ? body.description : undefined,
+        statut: body.statut !== undefined ? body.statut : undefined,
+        secteur_id: body.secteur_id !== undefined ? body.secteur_id : undefined,
+      }
     })
 
+    if (campagne.count === 0) return NextResponse.json({ error: 'Introuvable' }, { status: 404 })
     return NextResponse.json(campagne)
   } catch (error) {
+    console.error('Erreur maj campagne:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }
@@ -70,7 +66,7 @@ export async function DELETE(
   try {
     const { id } = await params
     const user = await getUser(request)
-    if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+    if (!user) return unauthorized()
 
     // Détache les prospects de la campagne avant suppression
     await prisma.prospect.updateMany({
@@ -84,6 +80,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true })
   } catch (error) {
+    console.error('Erreur suppression campagne:', error)
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
   }
 }

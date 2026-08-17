@@ -96,7 +96,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold text-white tracking-wide">
-          Bonjour, <span style={{ color: '#00f5ff' }}>{user.nom || user.email?.split('@')[0]}</span> 👋
+          Bonjour, <span style={{ color: 'var(--theme-primary)' }}>{user.nom || user.email?.split('@')[0]}</span> 👋
         </h2>
         <p className="text-white/40 text-sm mt-1">Voici un résumé de votre activité</p>
       </div>
@@ -107,19 +107,19 @@ export default function DashboardPage() {
           <div key={i} className="rounded-xl p-5 relative overflow-hidden"
             style={{
               background: 'linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))',
-              border: '1px solid rgba(0,245,255,0.15)',
+              border: '1px solid var(--theme-primary-15)',
               backdropFilter: 'blur(10px)'
             }}>
             <div className="absolute top-0 right-0 w-16 h-16 rounded-full blur-2xl opacity-20"
-              style={{ background: '#00f5ff', transform: 'translate(30%, -30%)' }} />
+              style={{ background: 'var(--theme-primary)', transform: 'translate(30%, -30%)' }} />
             <div className="flex items-start justify-between mb-3">
-              <span className="text-2xl" style={{ color: '#00f5ff' }}>{kpi.icon}</span>
+              <span className="text-2xl" style={{ color: 'var(--theme-primary)' }}>{kpi.icon}</span>
             </div>
             <div className="text-3xl font-black text-white mb-1">
               {loading ? '—' : <><AnimatedNumber value={kpi.value} />{kpi.suffix}</>}
             </div>
             <div className="text-xs text-white/40 mb-2">{kpi.label}</div>
-            <div className="text-xs font-medium text-cyan-400">↑ {kpi.delta}</div>
+            <div className="text-xs font-medium text-[var(--theme-primary)]">↑ {kpi.delta}</div>
           </div>
         ))}
       </div>
@@ -129,7 +129,7 @@ export default function DashboardPage() {
 
         {/* Activité */}
         <div className="lg:col-span-2 rounded-xl p-5"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(0,245,255,0.1)', backdropFilter: 'blur(10px)' }}>
+          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--theme-primary-10)', backdropFilter: 'blur(10px)' }}>
           <h3 className="text-sm font-semibold text-white/60 tracking-widest mb-4">ACTIVITÉ 30 JOURS</h3>
           {activityData.length === 0 ? (
             <div className="flex items-center justify-center h-48 text-white/20 text-sm">
@@ -140,14 +140,14 @@ export default function DashboardPage() {
               <AreaChart data={activityData}>
                 <defs>
                   <linearGradient id="gradProspects" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#00f5ff" stopOpacity={0.3} />
-                    <stop offset="95%" stopColor="#00f5ff" stopOpacity={0} />
+                    <stop offset="5%" stopColor="var(--theme-primary)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="var(--theme-primary)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="jour" stroke="#ffffff20" tick={{ fill: '#ffffff40', fontSize: 11 }} />
                 <YAxis stroke="#ffffff20" tick={{ fill: '#ffffff40', fontSize: 11 }} />
-                <Tooltip contentStyle={{ backgroundColor: '#0a0f1e', border: '1px solid rgba(0,245,255,0.3)', borderRadius: '8px', color: 'white' }} />
-                <Area type="monotone" dataKey="prospects" stroke="#00f5ff" strokeWidth={2} fill="url(#gradProspects)" name="Prospects" />
+                <Tooltip contentStyle={{ backgroundColor: 'var(--theme-card)', border: '1px solid var(--theme-primary-30)', borderRadius: '8px', color: 'white' }} />
+                <Area type="monotone" dataKey="prospects" stroke="var(--theme-primary)" strokeWidth={2} fill="url(#gradProspects)" name="Prospects" />
               </AreaChart>
             </ResponsiveContainer>
           )}
@@ -155,7 +155,7 @@ export default function DashboardPage() {
 
         {/* Camembert statuts */}
         <div className="rounded-xl p-5"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(0,245,255,0.1)', backdropFilter: 'blur(10px)' }}>
+          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--theme-primary-10)', backdropFilter: 'blur(10px)' }}>
           <h3 className="text-sm font-semibold text-white/60 tracking-widest mb-4">STATUTS</h3>
           {statutsData.length === 0 ? (
             <div className="flex items-center justify-center h-32 text-white/20 text-sm">
@@ -170,7 +170,7 @@ export default function DashboardPage() {
                       <Cell key={i} fill={entry.color} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: '#0a0f1e', border: '1px solid rgba(0,245,255,0.3)', borderRadius: '8px', color: 'white' }} />
+                  <Tooltip contentStyle={{ backgroundColor: 'var(--theme-card)', border: '1px solid var(--theme-primary-30)', borderRadius: '8px', color: 'white' }} />
                 </PieChart>
               </ResponsiveContainer>
               <div className="space-y-1.5 mt-2">
@@ -191,7 +191,7 @@ export default function DashboardPage() {
 
       {/* Campagnes */}
       <div className="rounded-xl p-5"
-        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(0,245,255,0.1)', backdropFilter: 'blur(10px)' }}>
+        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--theme-primary-10)', backdropFilter: 'blur(10px)' }}>
         <h3 className="text-sm font-semibold text-white/60 tracking-widest mb-4">CAMPAGNES ACTIVES</h3>
         {campagnes.length === 0 ? (
           <div className="text-center py-6 text-white/20 text-sm">
@@ -209,7 +209,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="h-1.5 rounded-full bg-white/10">
                   <div className="h-full rounded-full transition-all duration-1000"
-                    style={{ width: `${c.tauxConversion}%`, backgroundColor: '#00f5ff', boxShadow: '0 0 8px #00f5ff' }} />
+                    style={{ width: `${c.tauxConversion}%`, backgroundColor: 'var(--theme-primary)', boxShadow: '0 0 8px var(--theme-primary)' }} />
                 </div>
               </div>
             ))}

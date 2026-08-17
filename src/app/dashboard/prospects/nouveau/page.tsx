@@ -57,7 +57,7 @@ export default function NouveauProspectPage() {
     }
   }
 
-  const inputClass = "w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-white/20 text-sm focus:outline-none focus:border-cyan-500/50 transition"
+  const inputClass = "w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition"
   const labelClass = "text-xs text-white/40 mb-1.5 block tracking-wide"
 
   return (
@@ -76,7 +76,7 @@ export default function NouveauProspectPage() {
           </button>
           <button onClick={handleSubmit} disabled={loading}
             className="px-4 py-2 rounded-lg text-sm font-semibold text-black transition hover:opacity-80 disabled:opacity-50"
-            style={{ background: 'linear-gradient(135deg, #00f5ff, #bf00ff)' }}>
+            style={{ background: 'linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))' }}>
             {loading ? 'Création...' : 'Créer le prospect'}
           </button>
         </div>
@@ -129,9 +129,9 @@ export default function NouveauProspectPage() {
             <label className={labelClass}>Campagne</label>
             <select name="campagne_id" value={form.campagne_id} onChange={handleChange}
               className={inputClass}>
-              <option value="" style={{ backgroundColor: '#0a0f1e' }}>Aucune campagne</option>
+              <option value="" style={{ backgroundColor: 'var(--theme-card)' }}>Aucune campagne</option>
               {campagnes.map(c => (
-                <option key={c.id} value={c.id} style={{ backgroundColor: '#0a0f1e' }}>{c.nom}</option>
+                <option key={c.id} value={c.id} style={{ backgroundColor: 'var(--theme-card)' }}>{c.nom}</option>
               ))}
             </select>
           </div>
