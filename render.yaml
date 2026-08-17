@@ -1,0 +1,32 @@
+# Configuration de déploiement Render.
+# À importer via "New > Blueprint" en pointant sur ce dépôt : Render lit ce
+# fichier et crée le service. Les secrets restent à saisir dans l'interface
+# (sync: false = Render ne les prend pas depuis ce fichier, qui est public).
+services:
+  - type: web
+    name: tactiq
+    runtime: node
+    plan: free
+    region: frankfurt
+    branch: main
+
+    # prisma generate est indispensable : le client n'est pas versionné
+    # et @prisma/client n'a pas de script postinstall.
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+
+    healthCheckPath: /login
+
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_URL
+        sync: false
+      - key: NEXT_PUBLIC_SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
