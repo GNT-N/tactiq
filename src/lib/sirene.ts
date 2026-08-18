@@ -19,11 +19,14 @@ export interface FicheEntreprise {
   activite_naf: string | null
   commune: string | null
   dirigeant: string | null
+  // Effectif salarié estimé, déduit de la tranche INSEE. null = non renseigné.
+  effectif: number | null
   confiance: number
 }
 
 interface ResultatApi {
   siren: string
+  tranche_effectif_salarie?: string | null
   nom_complet?: string
   nom_raison_sociale?: string
   siege?: {
@@ -46,14 +49,19 @@ function normaliser(v: string) {
     .trim()
 }
 
-// Score 0-1 entre le nom OSM et la raison sociale du registre. Volontairement
-// simple : le but est d'écarter les mauvais appariements, pas de les classer finement.
+// Score 0-1 entre le nom OSM et la raison sociale du registre.
+// Volontairement conservateur : un mauvais rattachement coûte plus cher
+// qu'une absence de donnée.
 export function similarite(a: string, b: string): number {
   const na = normaliser(a)
   const nb = normaliser(b)
   if (!na || !nb) return 0
   if (na === nb) return 1
-  if (na.includes(nb) || nb.includes(na)) return 0.85
+
+  // Inclusion : "century21" dans "century21hestialdi". Fiable seulement si
+  // le nom inclus est assez long — "sas" est inclus partout.
+  const court = na.length <= nb.length ? na : nb
+  if ((na.includes(nb) || nb.includes(na)) && court.length >= 6) return 0.85
 
   const ta = new Set(na.split(' ').filter(m => m.length > 2))
   const tb = new Set(nb.split(' ').filter(m => m.length > 2))
@@ -61,19 +69,38 @@ export function similarite(a: string, b: string): number {
 
   let communs = 0
   for (const m of ta) if (tb.has(m)) communs++
+  if (communs === 0) return 0
 
-  return communs / Math.min(ta.size, tb.size)
+  // Jaccard : communs / union. Diviser par le plus petit ensemble donnait
+  // 1.00 dès qu'un seul mot était partagé — "Optic 2000" matchait "ML OPTIC".
+  const union = new Set([...ta, ...tb]).size
+  return communs / union
 }
 
 // Le registre renvoie parfois le nom d'usage entre parenthèses, souvent
 // identique au nom : "QUETTIER (QUETTIER)". On ne garde la parenthèse que
 // si elle apporte réellement une information.
 function nettoyerNom(v: string) {
-  return v.replace(/\s*\(([^)]+)\)\s*$/, (tout, entre: string) =>
+  return v.replace(/s*(([^)]+))s*$/, (tout, entre: string) =>
     v.toLowerCase().includes(entre.toLowerCase() + ' (') || v.trim().toLowerCase().startsWith(entre.toLowerCase())
       ? ''
       : tout
   ).trim()
+}
+
+// L'INSEE code l'effectif par tranches. On retient la borne basse : mieux
+// vaut sous-estimer un prospect que le surévaluer.
+const TRANCHES: Record<string, number> = {
+  '00': 0, '01': 1, '02': 3, '03': 6,
+  '11': 10, '12': 20, '21': 50, '22': 100,
+  '31': 200, '32': 250, '41': 500, '42': 1000,
+  '51': 2000, '52': 5000, '53': 10000,
+}
+
+function extraireEffectif(r: ResultatApi): number | null {
+  const code = r.tranche_effectif_salarie
+  if (!code) return null
+  return TRANCHES[code] ?? null
 }
 
 function extraireDirigeant(r: ResultatApi): string | null {
@@ -81,6 +108,41 @@ function extraireDirigeant(r: ResultatApi): string | null {
   if (!d) return null
   const personne = [d.prenoms, d.nom].filter(Boolean).join(' ').trim()
   return nettoyerNom(personne) || d.denomination?.trim() || null
+}
+
+/**
+ * Recherche exacte par SIRET. Aucun appariement approximatif : l'identifiant
+ * désigne un établissement et un seul. C'est la voie à privilégier quand
+ * OpenStreetMap fournit le SIRET (~45 % des cas).
+ */
+export async function rechercherParSiret(siret: string): Promise<FicheEntreprise | null> {
+  const params = new URLSearchParams({ q: siret, per_page: '1' })
+
+  const res = await fetch(`${ENDPOINT}?${params}`, {
+    headers: { Accept: 'application/json' },
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+  })
+
+  if (res.status === 429) throw new Error('Annuaire des entreprises momentanément saturé')
+  if (!res.ok) throw new Error(`Annuaire des entreprises a répondu ${res.status}`)
+
+  const data = await res.json() as { results?: ResultatApi[] }
+  const r = data.results?.[0]
+  if (!r) return null
+
+  return {
+    siren: r.siren,
+    siret: r.siege?.siret ?? siret,
+    nom_officiel: r.nom_complet || r.nom_raison_sociale || '',
+    actif: r.siege?.etat_administratif === 'A',
+    date_creation: r.siege?.date_creation ?? null,
+    date_fermeture: r.siege?.date_fermeture ?? null,
+    activite_naf: r.siege?.activite_principale ?? null,
+    commune: r.siege?.libelle_commune ?? null,
+    dirigeant: extraireDirigeant(r),
+    effectif: extraireEffectif(r),
+    confiance: 1, // identifiant exact, aucune incertitude
+  }
 }
 
 /**
@@ -117,10 +179,11 @@ export async function rechercherEntreprise(
     const officiel = r.nom_complet || r.nom_raison_sociale || ''
     let score = similarite(nom, officiel)
 
-    // Même commune : on accorde un bonus, mais le nom reste déterminant.
+    // Même commune : bonus multiplicatif, jamais additif. Un nom qui ne
+    // ressemble pas ne doit pas passer le seuil grâce à la seule géographie.
     const commune = r.siege?.libelle_commune
     if (villeNorm && commune && normaliser(commune) === villeNorm) {
-      score = Math.min(1, score + 0.15)
+      score = Math.min(1, score * 1.15)
     }
 
     if (!meilleur || score > meilleur.score) meilleur = { r, score }
@@ -140,6 +203,7 @@ export async function rechercherEntreprise(
     activite_naf: r.siege?.activite_principale ?? null,
     commune: r.siege?.libelle_commune ?? null,
     dirigeant: extraireDirigeant(r),
+    effectif: extraireEffectif(r),
     confiance: Math.round(score * 100) / 100,
   }
 }

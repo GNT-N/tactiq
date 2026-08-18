@@ -25,6 +25,14 @@ export const CATEGORIES: Record<string, string[]> = {
 export interface ProspectOsm {
   osm_id: string
   nom_entreprise: string
+  // Enseigne de réseau (Century 21, Foncia…) quand l'établissement en fait
+  // partie. Un franchisé n'a pas de site propre : il a une page sur celui
+  // du réseau. Ce n'est donc pas un prospect, malgré l'absence de tag website.
+  reseau: string | null
+  // Présent sur ~45 % des établissements français dans OSM. Quand il est là,
+  // l'enrichissement interroge le registre par identifiant exact au lieu de
+  // deviner à partir du nom.
+  siret: string | null
   adresse: string | null
   ville: string | null
   telephone: string | null
@@ -69,11 +77,20 @@ function normaliserTelephone(brut: string | undefined) {
   return t || null
 }
 
+// Les contributeurs utilisent indifféremment les préfixes "addr:" et
+// "contact:". Ne lire que le premier fait perdre des adresses existantes.
 function extraireAdresse(tags: Record<string, string>) {
-  const numero = tags['addr:housenumber']
-  const rue = tags['addr:street']
+  const numero = tags['addr:housenumber'] ?? tags['contact:housenumber']
+  const rue = tags['addr:street'] ?? tags['contact:street']
   if (!rue) return null
   return [numero, rue].filter(Boolean).join(' ')
+}
+
+// Un SIRET valide fait 14 chiffres. On refuse le reste plutôt que de
+// propager une saisie fantaisiste jusqu'au registre.
+function extraireSiret(tags: Record<string, string>) {
+  const brut = (tags['ref:FR:SIRET'] ?? '').replace(/\s/g, '')
+  return /^\d{14}$/.test(brut) ? brut : null
 }
 
 /**
@@ -85,6 +102,7 @@ export async function chercherProspects(
   ville: string,
   categorie: string,
   sansSiteUniquement = true,
+  exclureReseaux = true,
 ): Promise<ProspectOsm[]> {
   const filtres = CATEGORIES[categorie]
   if (!filtres) throw new Error(`Catégorie inconnue : ${categorie}`)
@@ -124,6 +142,15 @@ export async function chercherProspects(
   const data = await res.json() as { elements?: ElementOsm[] }
   const elements = data.elements ?? []
 
+  // Une enseigne qui revient plusieurs fois dans la même commune est un
+  // réseau, même quand le tag "brand" manque : sur Lyon, 4 des 5 "Century 21"
+  // sont taggés, pas le cinquième.
+  const occurrences = new Map<string, number>()
+  for (const el of elements) {
+    const n = el.tags?.name?.trim().toLowerCase()
+    if (n) occurrences.set(n, (occurrences.get(n) ?? 0) + 1)
+  }
+
   const prospects: ProspectOsm[] = []
 
   for (const el of elements) {
@@ -135,13 +162,24 @@ export async function chercherProspects(
     const site = tags.website || tags['contact:website'] || tags.url || null
     if (sansSiteUniquement && site) continue
 
+    // Trois indices convergents, du plus fiable au plus heuristique.
+    const tagueMarque = Boolean(tags.brand || tags['brand:wikidata'])
+    const repete = (occurrences.get(nom.toLowerCase()) ?? 0) > 1
+    const enseigne = tagueMarque
+      ? (tags.brand ?? nom)
+      : (tags.operator ?? (repete ? nom : null))
+
+    if (exclureReseaux && enseigne) continue
+
     prospects.push({
       osm_id: `${el.type}/${el.id}`,
       nom_entreprise: nom,
+      reseau: enseigne,
+      siret: extraireSiret(tags),
       adresse: extraireAdresse(tags),
       // Le tag addr:city n'est renseigné que sur ~2 % des POI : à défaut, la
       // commune interrogée fait foi, puisque la requête est bornée à sa zone.
-      ville: tags['addr:city'] || ville,
+      ville: tags['addr:city'] || tags['contact:city'] || ville,
       telephone: normaliserTelephone(tags.phone || tags['contact:phone']),
       site_web: site,
       latitude: el.lat ?? el.center?.lat ?? null,

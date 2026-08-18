@@ -15,10 +15,19 @@ const LONGUEUR_MAX = 300
 // trouvés — donc des données contrôlées par le client, qu'il faut valider.
 interface EntreeImport {
   nom_entreprise?: unknown
+  siret?: unknown
   adresse?: unknown
   ville?: unknown
   telephone?: unknown
   site_web?: unknown
+}
+
+// Le SIRET vient du client : on revalide sa forme plutôt que de propager
+// une saisie fantaisiste jusqu'au registre national.
+function siretValide(v: unknown): string | null {
+  if (typeof v !== 'string') return null
+  const t = v.replace(/\s/g, '')
+  return /^\d{14}$/.test(t) ? t : null
 }
 
 function texte(v: unknown): string | null {
@@ -54,6 +63,7 @@ export async function POST(request: Request) {
     const trouves = (brut as EntreeImport[])
       .map(e => ({
         nom_entreprise: texte(e?.nom_entreprise),
+        siret: siretValide(e?.siret),
         adresse: texte(e?.adresse),
         ville: texte(e?.ville),
         telephone: texte(e?.telephone),
@@ -82,6 +92,7 @@ export async function POST(request: Request) {
           user_id: user.id,
           campagne_id: campagne_id ?? null,
           nom_entreprise: p.nom_entreprise,
+          siret: p.siret,
           secteur_activite: categorie,
           ville: p.ville,
           adresse: p.adresse,
@@ -96,6 +107,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       trouves: trouves.length,
       importes: nouveaux.length,
+      avec_siret: nouveaux.filter(p => p.siret).length,
       doublons: trouves.length - nouveaux.length,
       limite_atteinte: nouveaux.length >= LIMITE_MAX,
     })

@@ -364,9 +364,9 @@ export default function ProspectDetailPage() {
                   <div className="space-y-2">
                     {prospect.analyse_json.signaux.map((signal: Signal) => (
                       <div key={signal.code} className="flex items-start gap-2 text-sm">
-                        <span style={{ color: scoreColor(Math.min(10, signal.poids * 1.5)) }}>▲</span>
+                        <span style={{ color: signal.poids < 0 ? '#64748b' : scoreColor(Math.min(10, signal.poids * 1.5)) }}>{signal.poids < 0 ? '▼' : '▲'}</span>
                         <span className="text-white/70 flex-1">{signal.label}</span>
-                        <span className="text-white/25 text-xs">+{signal.poids}</span>
+                        <span className="text-white/25 text-xs">{signal.poids > 0 ? '+' : ''}{signal.poids}</span>
                       </div>
                     ))}
                   </div>

@@ -1,5 +1,6 @@
+import { Prisma } from '@prisma/client'
 import { prisma } from './prisma'
-import { rechercherEntreprise } from './sirene'
+import { rechercherEntreprise, rechercherParSiret } from './sirene'
 
 export interface ResultatEnrichissement {
   id: string
@@ -27,7 +28,11 @@ export async function enrichirProspect(
 
   if (!prospect) return null
 
-  const fiche = await rechercherEntreprise(prospect.nom_entreprise, prospect.ville)
+  // Un SIRET connu (souvent fourni par OpenStreetMap) vaut mieux que
+  // n'importe quel appariement sur le nom : on l'utilise en priorité.
+  const fiche = prospect.siret
+    ? await rechercherParSiret(prospect.siret)
+    : await rechercherEntreprise(prospect.nom_entreprise, prospect.ville)
 
   if (!fiche) {
     await prisma.interaction.create({
@@ -62,6 +67,17 @@ export async function enrichirProspect(
       data: {
         siret: fiche.siret ?? prospect.siret,
         nom_dirigeant: fiche.dirigeant ?? prospect.nom_dirigeant,
+        // Conservé pour que l'analyse puisse en tenir compte dans le score.
+        sirene_json: {
+          nom_officiel: fiche.nom_officiel,
+          actif: fiche.actif,
+          date_creation: fiche.date_creation,
+          date_fermeture: fiche.date_fermeture,
+          effectif: fiche.effectif,
+          activite_naf: fiche.activite_naf,
+          confiance: fiche.confiance,
+          enrichi_le: new Date().toISOString(),
+        } as unknown as Prisma.InputJsonObject,
         ...(reclasser ? { statut: 'perdu' } : {}),
       },
     }),

@@ -12,6 +12,20 @@ export interface Signal {
   poids: number
 }
 
+// Ce qu'on sait du prospect en dehors de son site. Sans ces éléments, tous
+// les établissements sans site obtiendraient exactement la même note — or le
+// sourcing n'importe QUE des sans-site, donc le score ne classerait rien.
+export interface ContexteProspect {
+  telephone?: string | null
+  email_contact?: string | null
+  // Fiche du registre national, quand l'enrichissement a déjà tourné.
+  sirene?: {
+    actif?: boolean
+    date_creation?: string | null
+    effectif?: number | null
+  } | null
+}
+
 export interface AnalyseSite {
   url: string | null
   joignable: boolean
@@ -130,7 +144,10 @@ function anneeCopyright(html: string): number | null {
   return annees.length > 0 ? Math.max(...annees) : null
 }
 
-export async function analyserSite(siteWeb: string | null | undefined): Promise<AnalyseSite> {
+export async function analyserSite(
+  siteWeb: string | null | undefined,
+  contexte: ContexteProspect = {},
+): Promise<AnalyseSite> {
   const maintenant = new Date().toISOString()
   const signaux: Signal[] = []
 
@@ -148,19 +165,64 @@ export async function analyserSite(siteWeb: string | null | undefined): Promise<
     analyse_le: maintenant,
   }
 
+  // Joignabilité : un besoin web réel ne vaut rien si on ne peut pas
+  // joindre l'entreprise, et un email vaut plus qu'un téléphone puisque
+  // c'est le canal de l'outil.
+  const aEmail = Boolean(contexte.email_contact?.trim())
+  const aTel = Boolean(contexte.telephone?.trim())
+
+  if (aEmail) {
+    signaux.push({ code: 'email_disponible', label: 'Email de contact connu', poids: 1.5 })
+  }
+  if (aTel) {
+    signaux.push({ code: 'telephone_disponible', label: 'Téléphone connu', poids: 1 })
+  }
+  if (!aEmail && !aTel) {
+    signaux.push({ code: 'injoignable', label: 'Ni email ni téléphone : difficile à contacter', poids: -2 })
+  }
+
+  // Solidité de l'entreprise, quand le registre l'a renseignée. Une société
+  // établie depuis quinze ans et sans site n'a jamais investi dans le web :
+  // c'est un meilleur client qu'une structure née il y a trois mois.
+  const sirene = contexte.sirene
+  if (sirene) {
+    if (sirene.actif === false) {
+      signaux.push({ code: 'entreprise_cessee', label: 'Entreprise cessée au registre', poids: -10 })
+    }
+
+    if (sirene.date_creation) {
+      const annees = (Date.now() - new Date(sirene.date_creation).getTime()) / 31_557_600_000
+      if (annees >= 10) {
+        signaux.push({ code: 'entreprise_etablie', label: `Établie depuis ${Math.floor(annees)} ans`, poids: 2 })
+      } else if (annees >= 3) {
+        signaux.push({ code: 'entreprise_installee', label: `Installée depuis ${Math.floor(annees)} ans`, poids: 1 })
+      } else if (annees < 1) {
+        signaux.push({ code: "entreprise_recente", label: "Créée il y a moins d'un an", poids: -1 })
+      }
+    }
+
+    if (typeof sirene.effectif === 'number') {
+      if (sirene.effectif >= 10) {
+        signaux.push({ code: 'effectif_confortable', label: `${sirene.effectif} salariés ou plus`, poids: 2 })
+      } else if (sirene.effectif >= 1) {
+        signaux.push({ code: 'effectif_present', label: `${sirene.effectif} salarié(s)`, poids: 1 })
+      }
+    }
+  }
+
   const renseigne = Boolean(siteWeb?.trim())
   const url = renseigne ? normaliserUrl(siteWeb!) : null
 
   // Pas de site du tout : c'est le signal de besoin le plus fort.
   if (!renseigne) {
-    signaux.push({ code: 'aucun_site', label: 'Aucun site web', poids: 7 })
+    signaux.push({ code: 'aucun_site', label: 'Aucun site web', poids: 5 })
     return { ...base, signaux, score: calculerScore(signaux) }
   }
 
   // Une adresse saisie mais inexploitable vaut un site mort, pas une absence.
   if (!url) {
     base.erreur = 'url invalide'
-    signaux.push({ code: 'url_invalide', label: 'Adresse de site invalide', poids: 6 })
+    signaux.push({ code: 'url_invalide', label: 'Adresse de site invalide', poids: 4.5 })
     return { ...base, signaux, score: calculerScore(signaux) }
   }
 
@@ -175,7 +237,7 @@ export async function analyserSite(siteWeb: string | null | undefined): Promise<
     signaux.push({
       code: 'site_injoignable',
       label: `Site déclaré mais injoignable (${res.erreur})`,
-      poids: 6,
+      poids: 4.5,
     })
     return { ...base, signaux, score: calculerScore(signaux) }
   }
@@ -211,9 +273,14 @@ export async function analyserSite(siteWeb: string | null | undefined): Promise<
   return { ...base, signaux, score: calculerScore(signaux) }
 }
 
-// Score 0-10 : plus il est haut, plus le besoin est fort, donc plus le prospect
-// est chaud. Aucun appel LLM ici, le calcul reste reproductible.
+// Score 0-10 : plus il est haut, plus le prospect est chaud. Les poids
+// peuvent être négatifs (un prospect injoignable vaut moins), la somme est
+// bornée aux extrémités. Aucun appel LLM ici, le calcul reste reproductible.
 export function calculerScore(signaux: Signal[]): number {
+  // Entreprise fermée : aucun besoin web ne rattrape ça. Règle absolue
+  // plutôt que poids négatif, qu'une accumulation de bonus compenserait.
+  if (signaux.some(s => s.code === 'entreprise_cessee')) return 0
+
   const total = signaux.reduce((acc, s) => acc + s.poids, 0)
   return Math.max(0, Math.min(10, Math.round(total)))
 }

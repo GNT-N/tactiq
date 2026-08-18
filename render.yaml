@@ -10,9 +10,12 @@ services:
     region: frankfurt
     branch: main
 
-    # prisma generate est indispensable : le client n'est pas versionné
-    # et @prisma/client n'a pas de script postinstall.
-    buildCommand: npm ci && npm run build
+    # prisma generate est indispensable (le client n'est pas versionné et
+    # @prisma/client n'a pas de postinstall), et migrate deploy applique les
+    # migrations en attente AVANT que la nouvelle version ne démarre.
+    # Si une migration échoue, le déploiement échoue — c'est voulu : mieux
+    # vaut un déploiement bloqué qu'un code qui interroge une colonne absente.
+    buildCommand: npm ci && npx prisma migrate deploy && npm run build
     startCommand: npm start
 
     healthCheckPath: /login

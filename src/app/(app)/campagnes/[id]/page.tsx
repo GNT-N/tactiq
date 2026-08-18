@@ -110,6 +110,7 @@ export default function CampagneDetailPage() {
       const details = [
         `${data.importes} prospect${data.importes > 1 ? 's' : ''} importé${data.importes > 1 ? 's' : ''}`,
         data.doublons > 0 ? `${data.doublons} déjà connu${data.doublons > 1 ? 's' : ''}` : null,
+        data.avec_siret > 0 ? `${data.avec_siret} avec SIRET` : null,
         trouves.length > sourcing.limite ? `${trouves.length} trouvés au total, limité à ${sourcing.limite}` : null,
       ].filter(Boolean).join(' · ')
 

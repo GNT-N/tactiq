@@ -28,7 +28,8 @@ export async function POST(request: Request) {
     // ce compte décroît strictement et la boucle appelante se termine.
     const where = {
       user_id: user.id,
-      siret: null,
+      // Ne plus exclure ceux qui ont déjà un SIRET : venant d'OpenStreetMap,
+      // ce sont justement ceux qu'on enrichit le mieux.
       interactions: { none: { type: 'enrichissement' } },
       ...(campagne_id ? { campagne_id } : {}),
     }

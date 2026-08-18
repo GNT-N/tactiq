@@ -58,7 +58,17 @@ export async function analyserProspect(
 
   if (!prospect) return null
 
-  const analyse = await analyserSite(prospect.site_web)
+  const sirene = prospect.sirene_json as {
+    actif?: boolean
+    date_creation?: string | null
+    effectif?: number | null
+  } | null
+
+  const analyse = await analyserSite(prospect.site_web, {
+    telephone: prospect.telephone,
+    email_contact: prospect.email_contact,
+    sirene,
+  })
 
   const secteur = prospect.campagne?.secteur?.nom ?? prospect.secteur_activite ?? null
   const config = prospect.campagne?.secteur?.config_json as { argument_cle?: string } | null

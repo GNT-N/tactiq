@@ -67,7 +67,8 @@ model Prospect {
   score            Int           @default(0) // 0-10 calculé par IA, ajustable
   statut           String        @default("nouveau") // nouveau | contacte | en_attente | converti | perdu
   valeur_estimee   Float?        // pipeline €
-  analyse_json     Json?         // analyse IA du besoin web
+  analyse_json     Json?         // analyse technique du site + signaux de score
+  sirene_json      Json?         // fiche registre national : état, ancienneté, effectif
   resume_ia        String?       // résumé IA en texte libre
   notes            String?
   prochaine_action String?
