@@ -4,7 +4,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { apiFetch } from '@/lib/api'
 import Link from 'next/link'
-import { CATEGORIES } from '@/lib/overpass'
+import { CATEGORIES, chercherProspects } from '@/lib/overpass'
 
 const statutConfig: Record<string, { label: string, color: string }> = {
   nouveau:    { label: 'Nouveau',    color: '#64748b' },
@@ -78,13 +78,30 @@ export default function CampagneDetailPage() {
     setSourcing(s => ({ ...s, encours: true, message: '', erreur: '' }))
 
     try {
+      // La recherche OpenStreetMap part d'ici, pas du serveur : les quotas
+      // sont par IP, et celle d'un hébergeur mutualisé est saturée en
+      // permanence par les autres projets qui la partagent.
+      const trouves = await chercherProspects(
+        sourcing.ville.trim(),
+        sourcing.categorie,
+        true,
+      )
+
+      if (trouves.length === 0) {
+        setSourcing(s => ({
+          ...s,
+          encours: false,
+          message: 'Aucun établissement sans site web trouvé dans cette commune.',
+        }))
+        return
+      }
+
       const res = await apiFetch('/api/prospects/importer', {
         method: 'POST',
         body: JSON.stringify({
           campagne_id: id,
-          ville: sourcing.ville.trim(),
           categorie: sourcing.categorie,
-          limite: sourcing.limite,
+          prospects: trouves.slice(0, sourcing.limite),
         })
       })
       const data = await res.json()
@@ -93,7 +110,7 @@ export default function CampagneDetailPage() {
       const details = [
         `${data.importes} prospect${data.importes > 1 ? 's' : ''} importé${data.importes > 1 ? 's' : ''}`,
         data.doublons > 0 ? `${data.doublons} déjà connu${data.doublons > 1 ? 's' : ''}` : null,
-        data.limite_atteinte ? `limite atteinte sur ${data.trouves} trouvés` : null,
+        trouves.length > sourcing.limite ? `${trouves.length} trouvés au total, limité à ${sourcing.limite}` : null,
       ].filter(Boolean).join(' · ')
 
       setSourcing(s => ({ ...s, encours: false, message: details }))

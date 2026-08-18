@@ -1,12 +1,13 @@
-// Instances publiques gratuites, avec quotas par IP. On bascule sur un miroir
-// quand la première sature, ce qui arrive régulièrement en heures pleines.
+// Instances publiques gratuites, avec quotas PAR IP. C'est la raison pour
+// laquelle cette recherche part du NAVIGATEUR et non du serveur : l'IP de
+// sortie d'un hébergeur mutualisé est partagée par des centaines de projets,
+// donc limitée en permanence. Depuis ton poste, tu as ton propre quota.
+// On bascule sur le miroir suivant quand le premier sature.
 const ENDPOINTS = [
-  'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
-  'https://overpass.private.coffee/api/interpreter',
+  'https://overpass-api.de/api/interpreter',
 ]
 const TIMEOUT_MS = 45_000
-const UA = 'TactiqCRM/1.0 (prospection locale; contact via github.com/GNT-N/tactiq)'
 
 // Les catégories reprennent les noms des secteurs seedés en base, pour que
 // l'import puisse rattacher directement le bon Secteur à la campagne.
@@ -100,7 +101,6 @@ export async function chercherProspects(
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'User-Agent': UA,
         },
         body: new URLSearchParams({ data: requete }),
         signal: AbortSignal.timeout(TIMEOUT_MS),
