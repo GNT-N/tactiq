@@ -62,14 +62,14 @@ export default function EmailsPage() {
         <div className="text-center py-12 text-white/30 text-sm">Chargement...</div>
       ) : filtres.length === 0 ? (
         <div className="text-center py-16 space-y-3"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px' }}>
+          style={{ background: 'var(--acier-800)', border: '1px solid var(--acier-600)', borderRadius: '12px' }}>
           <p className="text-4xl">◇</p>
           <p className="text-white/30 text-sm">Aucun email généré</p>
           <p className="text-white/20 text-xs">Générez des emails depuis les fiches prospects</p>
         </div>
       ) : (
         <div className="rounded-xl overflow-hidden"
-          style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+          style={{ border: '1px solid var(--acier-600)' }}>
           {filtres.map((email, i) => (
             <div key={email.id}
               className="flex items-center gap-4 px-5 py-4 cursor-pointer transition-all"
@@ -122,7 +122,7 @@ export default function EmailsPage() {
             </div>
 
             <div className="rounded-lg p-4 text-sm text-white/70 whitespace-pre-wrap"
-              style={{ backgroundColor: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+              style={{ backgroundColor: 'var(--acier-700)', border: '1px solid var(--acier-600)' }}>
               {selected.contenu}
             </div>
 

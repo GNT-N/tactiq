@@ -127,7 +127,7 @@ export default function EmailGeneratorModal({ prospect, onClose, onSaved }: Prop
               <input
                 value={email.sujet}
                 onChange={e => setEmail(prev => prev ? { ...prev, sujet: e.target.value } : null)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition"
+                className="w-full bg-[var(--acier-700)] border border-[var(--acier-600)] rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition"
               />
             </div>
 
@@ -138,7 +138,7 @@ export default function EmailGeneratorModal({ prospect, onClose, onSaved }: Prop
                 value={email.corps}
                 onChange={e => setEmail(prev => prev ? { ...prev, corps: e.target.value } : null)}
                 rows={14}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition resize-none"
+                className="w-full bg-[var(--acier-700)] border border-[var(--acier-600)] rounded-lg px-4 py-3 text-white text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition resize-none"
               />
             </div>
 
@@ -146,22 +146,22 @@ export default function EmailGeneratorModal({ prospect, onClose, onSaved }: Prop
             <div className="flex gap-3 pt-2 flex-wrap">
               <button onClick={generer} disabled={saving !== null}
                 className="px-4 py-2 rounded-lg text-sm text-white/60 hover:text-white transition disabled:opacity-40"
-                style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+                style={{ border: '1px solid var(--acier-600)' }}>
                 ↺ Regénérer
               </button>
               <button onClick={copier}
                 className="px-4 py-2 rounded-lg text-sm text-white/60 hover:text-white transition"
-                style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+                style={{ border: '1px solid var(--acier-600)' }}>
                 {copied ? '✓ Copié !' : '⎘ Copier'}
               </button>
               <button onClick={() => enregistrer('genere')} disabled={saving !== null}
                 className="px-4 py-2 rounded-lg text-sm text-white/60 hover:text-white transition disabled:opacity-40"
-                style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+                style={{ border: '1px solid var(--acier-600)' }}>
                 {saving === 'genere' ? 'Enregistrement...' : '⌸ Enregistrer'}
               </button>
               <button onClick={() => enregistrer('envoye')} disabled={saving !== null}
                 className="px-4 py-2 rounded-lg text-sm text-white/60 hover:text-white transition disabled:opacity-40"
-                style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+                style={{ border: '1px solid var(--acier-600)' }}>
                 {saving === 'envoye' ? 'Enregistrement...' : '✓ Marquer envoyé'}
               </button>
               <button onClick={() => enregistrer('envoi')}

@@ -47,6 +47,17 @@ export async function PATCH(
     const prospect = await prisma.prospect.updateMany({
       where: { id, user_id: user.id },
       data: {
+        // Champs d'identité et de contact : modifiables un par un depuis la
+        // fiche, sans passer par le formulaire complet.
+        nom_entreprise: body.nom_entreprise !== undefined ? body.nom_entreprise : undefined,
+        nom_dirigeant: body.nom_dirigeant !== undefined ? body.nom_dirigeant : undefined,
+        telephone: body.telephone !== undefined ? body.telephone : undefined,
+        email_contact: body.email_contact !== undefined ? body.email_contact : undefined,
+        site_web: body.site_web !== undefined ? body.site_web : undefined,
+        adresse: body.adresse !== undefined ? body.adresse : undefined,
+        ville: body.ville !== undefined ? body.ville : undefined,
+        siret: body.siret !== undefined ? body.siret : undefined,
+        secteur_activite: body.secteur_activite !== undefined ? body.secteur_activite : undefined,
         statut: body.statut !== undefined ? body.statut : undefined,
         score: body.score !== undefined ? body.score : undefined,
         notes: body.notes !== undefined ? body.notes : undefined,

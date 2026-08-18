@@ -251,7 +251,7 @@ export default function CampagneDetailPage() {
             <div className="flex gap-3 pt-2">
               <button onClick={() => setShowDeleteConfirm(false)}
                 className="flex-1 px-4 py-2 rounded-lg text-sm text-white/60 hover:text-white transition"
-                style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+                style={{ border: '1px solid var(--acier-600)' }}>
                 Annuler
               </button>
               <button onClick={supprimerCampagne} disabled={deleting}
@@ -280,7 +280,7 @@ export default function CampagneDetailPage() {
 
       {/* Sourcing OpenStreetMap */}
       <div className="rounded-xl p-5 space-y-4"
-        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
+        style={{ background: 'var(--acier-800)', border: '1px solid var(--acier-600)' }}>
         <div>
           <h3 className="text-xs font-semibold tracking-widest text-white/40">SOURCING</h3>
           <p className="text-white/30 text-xs mt-1">
@@ -296,7 +296,7 @@ export default function CampagneDetailPage() {
               onChange={e => setSourcing(s => ({ ...s, ville: e.target.value }))}
               onKeyDown={e => e.key === 'Enter' && importer()}
               placeholder="Lyon"
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm placeholder-white/20 focus:outline-none focus:border-[var(--theme-primary-50)] transition"
+              className="w-full bg-[var(--acier-700)] border border-[var(--acier-600)] rounded-lg px-3 py-2 text-white text-sm placeholder-white/20 focus:outline-none focus:border-[var(--theme-primary-50)] transition"
             />
           </div>
 
@@ -305,7 +305,7 @@ export default function CampagneDetailPage() {
             <select
               value={sourcing.categorie}
               onChange={e => setSourcing(s => ({ ...s, categorie: e.target.value }))}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition">
+              className="w-full bg-[var(--acier-700)] border border-[var(--acier-600)] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition">
               {Object.keys(CATEGORIES).map(c => (
                 <option key={c} value={c} style={{ backgroundColor: 'var(--theme-card)' }}>{c}</option>
               ))}
@@ -318,7 +318,7 @@ export default function CampagneDetailPage() {
               type="number" min={1} max={200}
               value={sourcing.limite}
               onChange={e => setSourcing(s => ({ ...s, limite: Number(e.target.value) }))}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition"
+              className="w-full bg-[var(--acier-700)] border border-[var(--acier-600)] rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition"
             />
           </div>
 
@@ -336,7 +336,7 @@ export default function CampagneDetailPage() {
           <p className="text-red-400 text-sm">{sourcing.erreur}</p>
         )}
 
-        <div className="pt-4 space-y-2" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="pt-4 space-y-2" style={{ borderTop: '1px solid var(--acier-600)' }}>
           <p className="text-white/30 text-xs">
             Ou dépose un fichier CSV — les colonnes sont reconnues automatiquement
             (nom, ville, téléphone, email, site, dirigeant, SIRET…), quel que soit
@@ -344,7 +344,7 @@ export default function CampagneDetailPage() {
           </p>
 
           <label className="inline-block px-4 py-2 rounded-lg text-sm text-white/60 hover:text-white transition cursor-pointer"
-            style={{ border: '1px solid rgba(255,255,255,0.1)', opacity: csv.encours ? 0.4 : 1 }}>
+            style={{ border: '1px solid var(--acier-600)', opacity: csv.encours ? 0.4 : 1 }}>
             {csv.encours ? 'Lecture...' : '↥ Importer un CSV'}
             <input
               type="file"
@@ -431,7 +431,7 @@ export default function CampagneDetailPage() {
           { label: 'Pipeline', value: campagne.prospects?.reduce((acc: number, p: any) => acc + (p.valeur_estimee || 0), 0) || 0, suffix: '€', icon: '◇' },
         ].map((stat, i) => (
           <div key={i} className="rounded-xl p-4"
-            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--theme-primary-10)' }}>
+            style={{ background: 'var(--acier-800)', border: '1px solid var(--theme-primary-10)' }}>
             <div className="text-lg mb-1" style={{ color: 'var(--theme-primary)' }}>{stat.icon}</div>
             <div className="text-2xl font-black text-white">{stat.value}{stat.suffix || ''}</div>
             <div className="text-xs text-white/40 mt-1">{stat.label}</div>
@@ -441,10 +441,10 @@ export default function CampagneDetailPage() {
 
       {/* Prospects */}
       <div className="rounded-xl overflow-hidden"
-        style={{ border: '1px solid rgba(255,255,255,0.08)' }}>
+        style={{ border: '1px solid var(--acier-600)' }}>
 
         <div className="flex items-center justify-between px-5 py-4"
-          style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          style={{ backgroundColor: 'var(--acier-700)', borderBottom: '1px solid var(--acier-600)' }}>
           <h3 className="text-xs font-semibold tracking-widest text-white/40">
             PROSPECTS ({campagne.prospects?.length || 0})
           </h3>

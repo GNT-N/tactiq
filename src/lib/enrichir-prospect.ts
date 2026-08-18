@@ -23,7 +23,7 @@ export async function enrichirProspect(
 ): Promise<ResultatEnrichissement | null> {
   const prospect = await prisma.prospect.findFirst({
     where: { id: prospectId, user_id: userId },
-    select: { id: true, nom_entreprise: true, ville: true, statut: true, siret: true, nom_dirigeant: true },
+    select: { id: true, nom_entreprise: true, ville: true, statut: true, siret: true, nom_dirigeant: true, score: true },
   })
 
   if (!prospect) return null
@@ -61,12 +61,19 @@ export async function enrichirProspect(
   // reclasse que les prospects encore intacts, jamais un statut posé à la main.
   const reclasser = !fiche.actif && prospect.statut === 'nouveau'
 
+  // Le score doit tomber immédiatement, sans attendre une ré-analyse : sinon
+  // l'ordre des opérations décide de la justesse de la note. Une fiche
+  // analysée avant d'être enrichie gardait un score élevé sur une société
+  // fermée depuis trente ans.
+  const scoreAnnule = !fiche.actif
+
   await prisma.$transaction([
     prisma.prospect.update({
       where: { id: prospect.id },
       data: {
         siret: fiche.siret ?? prospect.siret,
         nom_dirigeant: fiche.dirigeant ?? prospect.nom_dirigeant,
+        ...(scoreAnnule ? { score: 0 } : {}),
         // Conservé pour que l'analyse puisse en tenir compte dans le score.
         sirene_json: {
           nom_officiel: fiche.nom_officiel,
@@ -85,7 +92,7 @@ export async function enrichirProspect(
       data: {
         prospect_id: prospect.id,
         type: 'enrichissement',
-        contenu: `${fiche.nom_officiel} · ${etat} · SIRET ${fiche.siret ?? 'inconnu'} · dirigeant ${fiche.dirigeant ?? 'inconnu'} · confiance ${fiche.confiance}`,
+        contenu: `${fiche.nom_officiel} · ${etat} · SIRET ${fiche.siret ?? 'inconnu'} · dirigeant ${fiche.dirigeant ?? 'inconnu'} · confiance ${fiche.confiance}${scoreAnnule ? ' · score ramené à 0' : ''}`,
         ...(reclasser ? { statut_avant: prospect.statut, statut_apres: 'perdu' } : {}),
       },
     }),

@@ -1,26 +1,128 @@
 @import "tailwindcss";
 
+/* ------------------------------------------------------------------
+   TACTIQ — console d'opérations
+   Châssis en acier mat, électronique en cyan froid. Le vocabulaire est
+   celui d'un équipement : angles vifs, libellés en capitales espacées,
+   données en chasse fixe pour que les colonnes de chiffres s'alignent.
+   ------------------------------------------------------------------ */
+
+@theme {
+  /* Angles vifs partout. Une seule déclaration désamorce les 123 coins
+     arrondis hérités, sans toucher aux fichiers de pages. */
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+  --radius-full: 0px;
+
+  --font-display: var(--police-titre);
+  --font-sans: var(--police-texte);
+  --font-mono: var(--police-donnee);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Châssis : neutres froids, mats. Ils ne changent pas avec le thème —
+     seul l'accent le fait. */
+  --acier-900: #0d0f12;
+  --acier-800: #12151a;
+  --acier-700: #1a1e25;
+  --acier-600: #252a33;
+  --kaki: #3d4230;
+  --texte: #c8ccd0;
+  --texte-attenue: rgba(200, 204, 208, 0.45);
+  --alerte: #ff3b30;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--acier-900);
+  color: var(--texte);
+  font-family: var(--police-texte), system-ui, sans-serif;
+  /* Les chiffres tabulaires évitent que les scores dansent d'une ligne
+     à l'autre dans les listes. */
+  font-variant-numeric: tabular-nums;
+}
+
+/* Titres et libellés : la condensée porte le caractère, jamais le corps. */
+h1, h2, h3, .titre {
+  font-family: var(--police-titre), system-ui, sans-serif;
+  letter-spacing: 0.02em;
+}
+
+/* Données : SIRET, scores, téléphones, dates. Chasse fixe = colonnes
+   alignables et lecture de référence, pas décoration. */
+.donnee {
+  font-family: var(--police-donnee), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------
+   Coin biseauté — la signature structurelle.
+   Le bord est obtenu par superposition : l'enveloppe porte la couleur de
+   bord et 1px de marge, l'intérieur porte le fond. Un simple clip-path
+   sur une bordure la trancherait en diagonale.
+   ------------------------------------------------------------------ */
+.biseau {
+  --coupe: 14px;
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--coupe)) 0,
+    100% var(--coupe),
+    100% 100%,
+    var(--coupe) 100%,
+    0 calc(100% - var(--coupe))
+  );
+}
+
+.biseau-cadre {
+  --coupe: 14px;
+  padding: 1px;
+  background: var(--theme-primary-20, var(--acier-600));
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--coupe)) 0,
+    100% var(--coupe),
+    100% 100%,
+    var(--coupe) 100%,
+    0 calc(100% - var(--coupe))
+  );
+}
+
+.biseau-cadre > * {
+  --coupe: 13px;
+  background: var(--acier-800);
+  clip-path: polygon(
+    0 0,
+    calc(100% - var(--coupe)) 0,
+    100% var(--coupe),
+    100% 100%,
+    var(--coupe) 100%,
+    0 calc(100% - var(--coupe))
+  );
+}
+
+/* Repère d'en-tête : un filet court sous les intitulés de section, dans
+   l'accent. Remplace les points et puces génériques. */
+.repere::before {
+  content: "";
+  display: block;
+  width: 24px;
+  height: 2px;
+  background: var(--theme-primary, var(--texte));
+  margin-bottom: 8px;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--theme-primary, #00e5d4);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

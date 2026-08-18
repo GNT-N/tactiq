@@ -1,9 +1,7 @@
-import Groq from 'groq-sdk'
+import { groq, MODELE, BUDGET_TOKENS, messageErreurGroq } from '@/lib/groq'
 import { prisma } from '@/lib/prisma'
 import { getUser, unauthorized } from '@/lib/auth'
 import { NextResponse } from 'next/server'
-
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
 export async function POST(request: Request) {
   try {
@@ -52,9 +50,12 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format exact :
 
     const completion = await groq.chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
-      model: 'llama-3.3-70b-versatile',
+      model: MODELE,
       temperature: 0.7,
-      max_tokens: 1000,
+      max_tokens: BUDGET_TOKENS,
+      // Sortie JSON garantie par l'API : plus fiable qu'une consigne dans
+      // le prompt, que le modele peut enrober de texte ou de balises.
+      response_format: { type: 'json_object' },
     })
 
     const content = completion.choices[0]?.message?.content || ''
@@ -72,6 +73,6 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format exact :
 
   } catch (error) {
     console.error('Erreur génération email:', error)
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 })
+    return NextResponse.json({ error: messageErreurGroq(error) }, { status: 502 })
   }
 }

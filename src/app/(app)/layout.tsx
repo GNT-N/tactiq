@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
@@ -29,7 +29,6 @@ function DashboardChrome({ children }: { children: React.ReactNode }) {
   const { theme, t, setTheme } = useTheme()
   const [userEmail, setUserEmail] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
 
   // Sans session, on ne laisse même pas s'afficher la coquille du dashboard.
   useEffect(() => {
@@ -42,93 +41,6 @@ function DashboardChrome({ children }: { children: React.ReactNode }) {
     })
   }, [router])
 
-  // Background canvas animé
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!canvas) return
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
-
-    const resize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
-    }
-    window.addEventListener('resize', resize)
-
-    // Particules
-    const particles: { x: number; y: number; vx: number; vy: number; size: number; opacity: number }[] = []
-    for (let i = 0; i < 80; i++) {
-      particles.push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        size: Math.random() * 1.5 + 0.5,
-        opacity: Math.random() * 0.5 + 0.1,
-      })
-    }
-
-    let animId: number
-    const animate = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-      // Lignes de grille subtiles
-      ctx.strokeStyle = `${t.primary}08`
-      ctx.lineWidth = 1
-      const gridSize = 80
-      for (let x = 0; x < canvas.width; x += gridSize) {
-        ctx.beginPath()
-        ctx.moveTo(x, 0)
-        ctx.lineTo(x, canvas.height)
-        ctx.stroke()
-      }
-      for (let y = 0; y < canvas.height; y += gridSize) {
-        ctx.beginPath()
-        ctx.moveTo(0, y)
-        ctx.lineTo(canvas.width, y)
-        ctx.stroke()
-      }
-
-      // Particules + connexions
-      particles.forEach((p, i) => {
-        p.x += p.vx
-        p.y += p.vy
-        if (p.x < 0 || p.x > canvas.width) p.vx *= -1
-        if (p.y < 0 || p.y > canvas.height) p.vy *= -1
-
-        // Point
-        ctx.beginPath()
-        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2)
-        ctx.fillStyle = `${t.primary}${Math.floor(p.opacity * 255).toString(16).padStart(2, '0')}`
-        ctx.fill()
-
-        // Connexions entre particules proches
-        particles.slice(i + 1).forEach(p2 => {
-          const dist = Math.hypot(p.x - p2.x, p.y - p2.y)
-          if (dist < 120) {
-            ctx.beginPath()
-            ctx.moveTo(p.x, p.y)
-            ctx.lineTo(p2.x, p2.y)
-            ctx.strokeStyle = `${t.primary}${Math.floor((1 - dist / 120) * 0.15 * 255).toString(16).padStart(2, '0')}`
-            ctx.lineWidth = 0.5
-            ctx.stroke()
-          }
-        })
-      })
-
-      animId = requestAnimationFrame(animate)
-    }
-
-    animate()
-    return () => {
-      cancelAnimationFrame(animId)
-      window.removeEventListener('resize', resize)
-    }
-  }, [theme, t.primary])
-
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/login')
@@ -137,8 +49,17 @@ function DashboardChrome({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen flex relative" style={{ ...variablesCss(theme), backgroundColor: t.bg }}>
 
-      {/* Background animé */}
-      <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none z-0" />
+      {/* Grille d'arpentage : repère statique, pas de boucle d'animation.
+          Les lignes fortes tous les 5 pas donnent l'échelle. */}
+      <div className="fixed inset-0 pointer-events-none z-0" style={{
+        backgroundImage: [
+          'linear-gradient(var(--theme-primary-04) 1px, transparent 1px)',
+          'linear-gradient(90deg, var(--theme-primary-04) 1px, transparent 1px)',
+          'linear-gradient(var(--theme-primary-10) 1px, transparent 1px)',
+          'linear-gradient(90deg, var(--theme-primary-10) 1px, transparent 1px)',
+        ].join(','),
+        backgroundSize: '32px 32px, 32px 32px, 160px 160px, 160px 160px',
+      }} />
 
       {/* Sidebar */}
       <aside

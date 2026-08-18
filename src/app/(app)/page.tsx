@@ -106,7 +106,7 @@ export default function DashboardPage() {
         {kpis.map((kpi, i) => (
           <div key={i} className="rounded-xl p-5 relative overflow-hidden"
             style={{
-              background: 'linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))',
+              background: 'var(--acier-800)',
               border: '1px solid var(--theme-primary-15)',
               backdropFilter: 'blur(10px)'
             }}>
@@ -129,7 +129,7 @@ export default function DashboardPage() {
 
         {/* Activité */}
         <div className="lg:col-span-2 rounded-xl p-5"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--theme-primary-10)', backdropFilter: 'blur(10px)' }}>
+          style={{ background: 'var(--acier-800)', border: '1px solid var(--theme-primary-10)', backdropFilter: 'blur(10px)' }}>
           <h3 className="text-sm font-semibold text-white/60 tracking-widest mb-4">ACTIVITÉ 30 JOURS</h3>
           {activityData.length === 0 ? (
             <div className="flex items-center justify-center h-48 text-white/20 text-sm">
@@ -155,7 +155,7 @@ export default function DashboardPage() {
 
         {/* Camembert statuts */}
         <div className="rounded-xl p-5"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--theme-primary-10)', backdropFilter: 'blur(10px)' }}>
+          style={{ background: 'var(--acier-800)', border: '1px solid var(--theme-primary-10)', backdropFilter: 'blur(10px)' }}>
           <h3 className="text-sm font-semibold text-white/60 tracking-widest mb-4">STATUTS</h3>
           {statutsData.length === 0 ? (
             <div className="flex items-center justify-center h-32 text-white/20 text-sm">
@@ -191,7 +191,7 @@ export default function DashboardPage() {
 
       {/* Campagnes */}
       <div className="rounded-xl p-5"
-        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--theme-primary-10)', backdropFilter: 'blur(10px)' }}>
+        style={{ background: 'var(--acier-800)', border: '1px solid var(--theme-primary-10)', backdropFilter: 'blur(10px)' }}>
         <h3 className="text-sm font-semibold text-white/60 tracking-widest mb-4">CAMPAGNES ACTIVES</h3>
         {campagnes.length === 0 ? (
           <div className="text-center py-6 text-white/20 text-sm">

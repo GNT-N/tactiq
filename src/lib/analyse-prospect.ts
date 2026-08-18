@@ -1,9 +1,7 @@
-import Groq from 'groq-sdk'
+import { groq, MODELE } from './groq'
 import { Prisma } from '@prisma/client'
 import { prisma } from './prisma'
 import { analyserSite, type Signal } from './analyse-site'
-
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
 // Le résumé ne doit commenter que ce qui a été réellement observé.
 async function resumer(
@@ -28,9 +26,11 @@ aucun chiffre, aucune statistique. Réponds avec le texte seul, sans préambule.
 
   const completion = await groq.chat.completions.create({
     messages: [{ role: 'user', content: prompt }],
-    model: 'llama-3.3-70b-versatile',
+    model: MODELE,
     temperature: 0.4,
-    max_tokens: 200,
+    // 200 suffisaient pour deux phrases, mais le canal "reasoning" mange
+    // le budget avant : la réponse revenait vide.
+    max_tokens: 1200,
   })
 
   return completion.choices[0]?.message?.content?.trim() || null
@@ -65,6 +65,7 @@ export async function analyserProspect(
   } | null
 
   const analyse = await analyserSite(prospect.site_web, {
+    nom_entreprise: prospect.nom_entreprise,
     telephone: prospect.telephone,
     email_contact: prospect.email_contact,
     sirene,

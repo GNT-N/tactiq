@@ -1,4 +1,7 @@
 export const themes = {
+  // Châssis acier, électronique cyan. Le dégradé va du cyan au teal profond
+  // pour évoquer du métal anodisé plutôt qu'un fondu néon.
+  tactique:  { nom: 'Tactique',  primary: '#00e5d4', secondary: '#157f76', bg: '#0d0f12', card: '#12151a' },
   cyberpunk: { nom: 'Cyberpunk', primary: '#00f5ff', secondary: '#bf00ff', bg: '#030712', card: '#0a0f1e' },
   aurora:    { nom: 'Aurora',    primary: '#f472b6', secondary: '#a855f7', bg: '#0d0718', card: '#130a1f' },
   fire:      { nom: 'Fire',      primary: '#f97316', secondary: '#ef4444', bg: '#0f0805', card: '#1a0e08' },
@@ -8,7 +11,7 @@ export const themes = {
 
 export type ThemeKey = keyof typeof themes
 
-export const THEME_PAR_DEFAUT: ThemeKey = 'cyberpunk'
+export const THEME_PAR_DEFAUT: ThemeKey = 'tactique'
 
 export function estThemeValide(valeur: unknown): valeur is ThemeKey {
   return typeof valeur === 'string' && valeur in themes

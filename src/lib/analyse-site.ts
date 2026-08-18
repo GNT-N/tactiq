@@ -16,6 +16,7 @@ export interface Signal {
 // les établissements sans site obtiendraient exactement la même note — or le
 // sourcing n'importe QUE des sans-site, donc le score ne classerait rien.
 export interface ContexteProspect {
+  nom_entreprise?: string | null
   telephone?: string | null
   email_contact?: string | null
   // Fiche du registre national, quand l'enrichissement a déjà tourné.
@@ -144,10 +145,90 @@ function anneeCopyright(html: string): number | null {
   return annees.length > 0 ? Math.max(...annees) : null
 }
 
+// ------------------------------------------------------------------
+// Détection d'un site non déclaré.
+// OpenStreetMap ne porte le tag "website" que si un contributeur l'a saisi :
+// son absence ne prouve rien. On tente donc les domaines plausibles et on
+// vérifie que la page parle bien de l'entreprise.
+// ------------------------------------------------------------------
+
+const MOTS_VIDES = new Set(['et', 'de', 'du', 'la', 'le', 'les', 'des', 'groupe', 'sarl', 'sas', 'eurl'])
+const SONDES_MAX = 4
+const TIMEOUT_SONDE_MS = 4000
+
+function motsSignifiants(nom: string) {
+  return nom
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, ' ')
+    .split(/\s+/)
+    .filter(m => m.length > 2 && !MOTS_VIDES.has(m))
+}
+
+function domainesCandidats(nom: string) {
+  const mots = motsSignifiants(nom)
+  if (mots.length === 0) return []
+
+  const colle = mots.join('')
+  const tiret = mots.join('-')
+  const bases = [...new Set([colle, tiret])].filter(b => b.length >= 5 && b.length <= 30)
+
+  // Les deux extensions pour les deux formes : les sondes partent en
+  // parallele, donc quatre coutent le meme temps que trois.
+  return bases.flatMap(b => [`https://${b}.fr`, `https://${b}.com`]).slice(0, SONDES_MAX)
+}
+
+function domaineRacine(hote: string) {
+  return hote.replace(/^www\./, '').toLowerCase()
+}
+
+async function sonderDomaine(candidat: string, nom: string) {
+  let url: URL
+  try { url = new URL(candidat) } catch { return null }
+  if (await refusMotif(url)) return null
+
+  let res: Response
+  try {
+    res = await fetch(url, {
+      redirect: 'follow',
+      signal: AbortSignal.timeout(TIMEOUT_SONDE_MS),
+      headers: { 'User-Agent': UA, Accept: 'text/html,*/*' },
+    })
+  } catch { return null }
+
+  if (!res.ok) return null
+
+  // Une redirection vers un autre domaine racine signale un domaine parqué ou
+  // une homonymie : "Groupe Mercure" atterrissait sur la chaîne d'hôtels Accor.
+  if (domaineRacine(new URL(res.url).hostname) !== domaineRacine(url.hostname)) return null
+
+  const html = (await res.text()).slice(0, 60_000)
+  const texte = html.replace(/<[^>]+>/g, ' ').normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '').toLowerCase()
+
+  const mots = motsSignifiants(nom)
+  const presents = mots.filter(m => texte.includes(m)).length
+
+  // La page doit vraiment parler de l'entreprise, pas seulement exister.
+  return mots.length > 0 && presents / mots.length >= 0.6 ? res.url : null
+}
+
+async function chercherSiteNonDeclare(nom: string) {
+  const candidats = domainesCandidats(nom)
+  if (candidats.length === 0) return null
+
+  // En parallèle : trois sondes séquentielles coûteraient jusqu'à douze
+  // secondes par prospect, ce qui ferait exploser le lot.
+  const resultats = await Promise.all(candidats.map(c => sonderDomaine(c, nom)))
+  return resultats.find(Boolean) ?? null
+}
+
 export async function analyserSite(
   siteWeb: string | null | undefined,
   contexte: ContexteProspect = {},
 ): Promise<AnalyseSite> {
+  const nom = contexte.nom_entreprise?.trim() ?? ''
   const maintenant = new Date().toISOString()
   const signaux: Signal[] = []
 
@@ -213,9 +294,23 @@ export async function analyserSite(
   const renseigne = Boolean(siteWeb?.trim())
   const url = renseigne ? normaliserUrl(siteWeb!) : null
 
-  // Pas de site du tout : c'est le signal de besoin le plus fort.
+  // Pas de site déclaré : avant de conclure à l'absence, on vérifie qu'il
+  // n'en existe pas un que la source n'a simplement pas renseigné.
   if (!renseigne) {
-    signaux.push({ code: 'aucun_site', label: 'Aucun site web', poids: 5 })
+    const trouve = nom ? await chercherSiteNonDeclare(nom) : null
+
+    if (trouve) {
+      base.url = trouve
+      base.joignable = true
+      signaux.push({
+        code: 'site_probable',
+        label: `Site probable trouvé : ${trouve} — à vérifier`,
+        poids: -3,
+      })
+    } else {
+      signaux.push({ code: 'aucun_site', label: 'Aucun site web', poids: 5 })
+    }
+
     return { ...base, signaux, score: calculerScore(signaux) }
   }
 

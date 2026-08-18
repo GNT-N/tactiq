@@ -57,7 +57,7 @@ export default function NouveauProspectPage() {
     }
   }
 
-  const inputClass = "w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition"
+  const inputClass = "w-full bg-[var(--acier-700)] border border-[var(--acier-600)] rounded-lg px-4 py-2.5 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition"
   const labelClass = "text-xs text-white/40 mb-1.5 block tracking-wide"
 
   return (
@@ -71,7 +71,7 @@ export default function NouveauProspectPage() {
         <div className="flex gap-2">
           <button onClick={() => router.back()}
             className="px-4 py-2 rounded-lg text-sm text-white/60 hover:text-white transition"
-            style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+            style={{ border: '1px solid var(--acier-600)' }}>
             Annuler
           </button>
           <button onClick={handleSubmit} disabled={loading}
@@ -92,7 +92,7 @@ export default function NouveauProspectPage() {
 
         {/* Infos entreprise */}
         <div className="rounded-xl p-6 space-y-4"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          style={{ background: 'var(--acier-800)', border: '1px solid var(--acier-600)' }}>
           <h3 className="text-xs font-semibold tracking-widest text-white/40">ENTREPRISE</h3>
 
           <div>
@@ -139,7 +139,7 @@ export default function NouveauProspectPage() {
 
         {/* Infos contact */}
         <div className="rounded-xl p-6 space-y-4"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          style={{ background: 'var(--acier-800)', border: '1px solid var(--acier-600)' }}>
           <h3 className="text-xs font-semibold tracking-widest text-white/40">CONTACT</h3>
 
           <div>
@@ -176,7 +176,7 @@ export default function NouveauProspectPage() {
 
       {/* Notes */}
       <div className="rounded-xl p-6 space-y-4"
-        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
+        style={{ background: 'var(--acier-800)', border: '1px solid var(--acier-600)' }}>
         <h3 className="text-xs font-semibold tracking-widest text-white/40">NOTES</h3>
         <textarea name="notes" value={form.notes} onChange={handleChange}
           placeholder="Informations complémentaires, contexte, observations..."

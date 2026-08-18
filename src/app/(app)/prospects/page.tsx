@@ -1,6 +1,7 @@
 'use client'
 
 import { apiFetch } from '@/lib/api'
+import ScoreTactique from '@/components/ScoreTactique'
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 
@@ -80,7 +81,7 @@ export default function ProspectsPage() {
           placeholder="Rechercher un prospect..."
           value={recherche}
           onChange={e => setRecherche(e.target.value)}
-          className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-white/30 text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition"
+          className="flex-1 bg-[var(--acier-700)] border border-[var(--acier-600)] rounded-lg px-4 py-2.5 text-white placeholder-white/30 text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition"
         />
         <div className="flex gap-2 flex-wrap">
           {STATUTS.map(s => (
@@ -99,11 +100,11 @@ export default function ProspectsPage() {
 
       {/* Tableau desktop / Cards mobile */}
       <div className="rounded-xl overflow-hidden"
-        style={{ border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(10px)' }}>
+        style={{ border: '1px solid var(--acier-600)', backdropFilter: 'blur(10px)' }}>
 
         {/* Header tableau — desktop uniquement */}
         <div className="hidden lg:grid grid-cols-12 gap-4 px-5 py-3 text-xs font-semibold tracking-widest"
-          style={{ backgroundColor: 'rgba(255,255,255,0.03)', color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          style={{ backgroundColor: 'var(--acier-700)', color: 'rgba(255,255,255,0.3)', borderBottom: '1px solid var(--acier-600)' }}>
           <div className="col-span-3">ENTREPRISE</div>
           <div className="col-span-2">SECTEUR</div>
           <div className="col-span-2">VILLE</div>
@@ -176,7 +177,7 @@ export default function ProspectsPage() {
                 <p className="text-white/40 text-xs">{[p.secteur_activite, p.ville].filter(Boolean).join(' · ')}</p>
               </div>
               <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-                <span className="text-xs font-bold" style={{ color: scoreColor(p.score) }}>{p.score}/10</span>
+                <ScoreTactique score={p.score} />
                 <span className="text-xs px-2 py-0.5 rounded-full"
                   style={{ backgroundColor: `${statutConfig[p.statut]?.color}25`, color: statutConfig[p.statut]?.color }}>
                   {statutConfig[p.statut]?.label}

@@ -50,7 +50,7 @@ export default function ParametresPage() {
     setTimeout(() => setSaved(false), 3000)
   }
 
-  const inputClass = "w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition"
+  const inputClass = "w-full bg-[var(--acier-700)] border border-[var(--acier-600)] rounded-lg px-4 py-2.5 text-white placeholder-white/20 text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition"
   const labelClass = "text-xs text-white/40 mb-1.5 block tracking-wide"
 
   return (
@@ -70,11 +70,11 @@ export default function ParametresPage() {
 
       {/* Profil */}
       <div className="rounded-xl p-6 space-y-4"
-        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
+        style={{ background: 'var(--acier-800)', border: '1px solid var(--acier-600)' }}>
         <h3 className="text-xs font-semibold tracking-widest text-white/40">PROFIL</h3>
 
         {/* Avatar */}
-        <div className="flex items-center gap-4 pb-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <div className="flex items-center gap-4 pb-4" style={{ borderBottom: '1px solid var(--acier-600)' }}>
           <div className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold"
             style={{ background: 'linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))', color: 'black' }}>
             {form.nom ? form.nom.charAt(0).toUpperCase() : email.charAt(0).toUpperCase()}
@@ -101,7 +101,7 @@ export default function ParametresPage() {
 
       {/* Thème */}
       <div className="rounded-xl p-6 space-y-4"
-        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
+        style={{ background: 'var(--acier-800)', border: '1px solid var(--acier-600)' }}>
         <h3 className="text-xs font-semibold tracking-widest text-white/40">THÈME</h3>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -132,7 +132,7 @@ export default function ParametresPage() {
 
       {/* Compte */}
       <div className="rounded-xl p-6 space-y-4"
-        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
+        style={{ background: 'var(--acier-800)', border: '1px solid var(--acier-600)' }}>
         <h3 className="text-xs font-semibold tracking-widest text-white/40">COMPTE</h3>
         <div className="flex justify-between items-center">
           <div>

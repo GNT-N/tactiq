@@ -62,7 +62,7 @@ export default function CampagnesPage() {
       {/* Formulaire création */}
       {showForm && (
         <div className="rounded-xl p-6 space-y-4"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--theme-primary-20)' }}>
+          style={{ background: 'var(--acier-800)', border: '1px solid var(--theme-primary-20)' }}>
           <h3 className="text-sm font-semibold text-white/60 tracking-widest">NOUVELLE CAMPAGNE</h3>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -70,12 +70,12 @@ export default function CampagnesPage() {
               <label className="text-xs text-white/40 mb-1.5 block">Nom *</label>
               <input value={form.nom} onChange={e => setForm(p => ({ ...p, nom: e.target.value }))}
                 placeholder="Restaurants Lyon" 
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition" />
+                className="w-full bg-[var(--acier-700)] border border-[var(--acier-600)] rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition" />
             </div>
             <div>
               <label className="text-xs text-white/40 mb-1.5 block">Secteur</label>
               <select value={form.secteur_id} onChange={e => setForm(p => ({ ...p, secteur_id: e.target.value }))}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition">
+                className="w-full bg-[var(--acier-700)] border border-[var(--acier-600)] rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition">
                 <option value="" style={{ backgroundColor: 'var(--theme-card)' }}>Aucun secteur</option>
                 {secteurs.map(s => (
                   <option key={s.id} value={s.id} style={{ backgroundColor: 'var(--theme-card)' }}>{s.nom}</option>
@@ -88,13 +88,13 @@ export default function CampagnesPage() {
             <label className="text-xs text-white/40 mb-1.5 block">Description</label>
             <input value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
               placeholder="Cibler les restaurants sans site web à Lyon..."
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition" />
+              className="w-full bg-[var(--acier-700)] border border-[var(--acier-600)] rounded-lg px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[var(--theme-primary-50)] transition" />
           </div>
 
           <div className="flex gap-3">
             <button onClick={() => setShowForm(false)}
               className="px-4 py-2 rounded-lg text-sm text-white/60 hover:text-white transition"
-              style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+              style={{ border: '1px solid var(--acier-600)' }}>
               Annuler
             </button>
             <button onClick={handleCreate} disabled={creating || !form.nom}
@@ -111,7 +111,7 @@ export default function CampagnesPage() {
         <div className="text-center py-12 text-white/30 text-sm">Chargement...</div>
       ) : campagnes.length === 0 ? (
         <div className="text-center py-16 space-y-3"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '12px' }}>
+          style={{ background: 'var(--acier-800)', border: '1px solid var(--acier-600)', borderRadius: '12px' }}>
           <p className="text-4xl">◈</p>
           <p className="text-white/30 text-sm">Aucune campagne</p>
           <button onClick={() => setShowForm(true)} className="text-[var(--theme-primary)] text-sm hover:opacity-80 transition">
@@ -125,7 +125,7 @@ export default function CampagnesPage() {
             return (
               <div key={c.id}
                 className="rounded-xl p-5 space-y-4 cursor-pointer transition-all duration-200 hover:scale-[1.01]"
-                style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}
+                style={{ background: 'var(--acier-800)', border: '1px solid var(--acier-600)' }}
                 onClick={() => router.push(`/campagnes/${c.id}`)}>
 
                 {/* Header card */}
@@ -148,7 +148,7 @@ export default function CampagnesPage() {
 
                 {/* Stats */}
                 <div className="flex items-center justify-between pt-2"
-                  style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                  style={{ borderTop: '1px solid var(--acier-600)' }}>
                   <div className="text-center">
                     <div className="text-lg font-bold text-white">{c._count?.prospects || 0}</div>
                     <div className="text-xs text-white/30">Prospects</div>

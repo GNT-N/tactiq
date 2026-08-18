@@ -5,6 +5,8 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { apiFetch } from '@/lib/api'
 import EmailGeneratorModal from '@/components/EmailGeneratorModal'
+import ScoreTactique from '@/components/ScoreTactique'
+import ChampEditable from '@/components/ChampEditable'
 import type { Signal } from '@/lib/analyse-site'
 
 const statutConfig: Record<string, { label: string, color: string }> = {
@@ -14,6 +16,10 @@ const statutConfig: Record<string, { label: string, color: string }> = {
   converti:   { label: 'Converti',  color: '#22c55e' },
   perdu:      { label: 'Perdu',     color: '#ef4444' },
 }
+
+// Ordre du pipeline : c'est la progression réelle d'un prospect, pas un
+// tri alphabétique. L'ordre porte l'information.
+const PIPELINE = ['nouveau', 'contacte', 'en_attente', 'converti', 'perdu']
 
 const scoreColor = (score: number) => {
   if (score >= 8) return '#ef4444'
@@ -46,6 +52,8 @@ export default function ProspectDetailPage() {
   const [analysing, setAnalysing] = useState(false)
   const [analyseErreur, setAnalyseErreur] = useState('')
   const [enrichissement, setEnrichissement] = useState({ encours: false, message: '', erreur: '' })
+  const [notes, setNotes] = useState('')
+  const [notesEnCours, setNotesEnCours] = useState(false)
 
   const chargerProspect = () =>
     apiFetch(`/api/prospects/detail/${id}`)
@@ -69,6 +77,47 @@ export default function ProspectDetailPage() {
   await apiFetch(`/api/prospects/detail/${id}`, { method: 'DELETE' })
   router.push('/prospects')
 }
+
+  // Le champ suit le prospect rechargé, sauf pendant une saisie en cours.
+  // Ajustement pendant le rendu plutôt qu'effet : c'est une synchronisation
+  // avec une donnée, pas un effet de bord.
+  const [notesConnues, setNotesConnues] = useState<string | null>(null)
+  if (prospect && !notesEnCours && (prospect.notes ?? '') !== notesConnues) {
+    setNotesConnues(prospect.notes ?? '')
+    setNotes(prospect.notes ?? '')
+  }
+
+  const enregistrerNotes = async () => {
+    setNotesEnCours(true)
+    try {
+      await majChamp('notes', notes.trim() === '' ? null : notes)
+    } finally {
+      setNotesEnCours(false)
+    }
+  }
+
+  // Mise à jour d'un seul champ : le PATCH n'accepte que la whitelist,
+  // donc envoyer un champ à la fois est sans risque.
+  const majChamp = async (champ: string, valeur: string | null) => {
+    await apiFetch(`/api/prospects/detail/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ [champ]: valeur })
+    })
+    await chargerProspect()
+  }
+
+  const changerStatut = async (statut: string) => {
+    if (statut === prospect.statut) return
+    // Affichage immédiat : le changement de statut est une action de tri,
+    // elle ne doit pas attendre le réseau.
+    setProspect((p: typeof prospect) => ({ ...p, statut }))
+
+    await apiFetch(`/api/prospects/detail/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ statut })
+    })
+    chargerProspect()
+  }
 
   const enrichir = () => {
     setEnrichissement({ encours: true, message: '', erreur: '' })
@@ -121,6 +170,8 @@ export default function ProspectDetailPage() {
     chargerProspect()
   }
 
+  const notesModifiees = prospect ? notes !== (prospect.notes ?? '') : false
+
   if (loading) return (
     <div className="flex items-center justify-center py-20">
       <p className="text-white/40">Chargement...</p>
@@ -134,8 +185,6 @@ export default function ProspectDetailPage() {
       <Link href="/prospects" className="text-[var(--theme-primary)] text-sm mt-2 inline-block">← Retour aux prospects</Link>
     </div>
   )
-
-  const s = statutConfig[prospect.statut] || statutConfig['nouveau']
 
   return (
     <div className="space-y-6">
@@ -162,7 +211,7 @@ export default function ProspectDetailPage() {
             <div className="flex gap-3 pt-2">
               <button onClick={() => setShowDeleteConfirm(false)}
                 className="flex-1 px-4 py-2 rounded-lg text-sm text-white/60 hover:text-white transition"
-                style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+                style={{ border: '1px solid var(--acier-600)' }}>
                 Annuler
               </button>
               <button onClick={supprimerProspect} disabled={deleting}
@@ -216,7 +265,7 @@ export default function ProspectDetailPage() {
             <button
               onClick={() => router.push(`/prospects/${id}/modifier`)}
               className="px-3 py-2 rounded-lg text-xs text-white/60 hover:text-white transition"
-              style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+              style={{ border: '1px solid var(--acier-600)' }}>
               ✎ Modifier
             </button>
             <button
@@ -240,62 +289,59 @@ export default function ProspectDetailPage() {
         {/* Colonne gauche */}
         <div className="space-y-4">
           <div className="rounded-xl p-5 space-y-4"
-            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            style={{ background: 'var(--acier-800)', border: '1px solid var(--acier-600)' }}>
             <h3 className="text-xs font-semibold tracking-widest text-white/40">INFORMATIONS</h3>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: scoreColor(prospect.score), boxShadow: `0 0 8px ${scoreColor(prospect.score)}` }} />
-                <span className="text-2xl font-black" style={{ color: scoreColor(prospect.score) }}>{prospect.score}/10</span>
+            <div className="space-y-3">
+              <ScoreTactique score={prospect.score} format="complet" />
+              <div className="flex flex-wrap gap-1">
+                {PIPELINE.map(st => {
+                  const cfg = statutConfig[st]
+                  const actif = prospect.statut === st
+                  return (
+                    <button key={st} onClick={() => changerStatut(st)}
+                      className="titre text-[10px] px-2 py-1 tracking-[0.12em] transition"
+                      style={{
+                        backgroundColor: actif ? `${cfg.color}25` : 'transparent',
+                        color: actif ? cfg.color : 'var(--texte-attenue)',
+                        border: `1px solid ${actif ? cfg.color + '66' : 'rgba(200,204,208,0.12)'}`,
+                      }}>
+                      {cfg.label.toUpperCase()}
+                    </button>
+                  )
+                })}
               </div>
-              <span className="text-xs px-3 py-1.5 rounded-full font-medium"
-                style={{ backgroundColor: `${s.color}25`, color: s.color }}>
-                {s.label}
-              </span>
             </div>
 
-            <div className="space-y-3 text-sm">
-              {prospect.nom_dirigeant && (
-                <div className="flex justify-between">
-                  <span className="text-white/40">Dirigeant</span>
-                  <span className="text-white">{prospect.nom_dirigeant}</span>
-                </div>
-              )}
-              {prospect.telephone && (
-                <div className="flex justify-between">
-                  <span className="text-white/40">Téléphone</span>
-                  <a href={`tel:${prospect.telephone}`} className="text-[var(--theme-primary)] hover:opacity-80">{prospect.telephone}</a>
-                </div>
-              )}
-              {prospect.email_contact && (
-                <div className="flex justify-between">
-                  <span className="text-white/40">Email</span>
-                  <a href={`mailto:${prospect.email_contact}`} className="text-[var(--theme-primary)] hover:opacity-80 truncate max-w-32">{prospect.email_contact}</a>
-                </div>
-              )}
-              {prospect.site_web && (
-                <div className="flex justify-between">
-                  <span className="text-white/40">Site web</span>
-                  <a href={prospect.site_web} target="_blank" className="text-[var(--theme-primary)] hover:opacity-80 truncate max-w-32">{prospect.site_web}</a>
-                </div>
-              )}
-              {prospect.adresse && (
-                <div className="flex justify-between">
-                  <span className="text-white/40">Adresse</span>
-                  <span className="text-white/60 text-xs text-right max-w-40">{prospect.adresse}</span>
-                </div>
-              )}
-              {prospect.siret && (
-                <div className="flex justify-between">
-                  <span className="text-white/40">SIRET</span>
-                  <span className="text-white/60 text-xs">{prospect.siret}</span>
-                </div>
-              )}
-              {prospect.valeur_estimee && (
-                <div className="flex justify-between">
-                  <span className="text-white/40">Valeur estimée</span>
-                  <span className="text-green-400 font-bold">{prospect.valeur_estimee.toLocaleString()}€</span>
+            <div className="space-y-2 text-sm">
+              <ChampEditable libelle="Dirigeant" valeur={prospect.nom_dirigeant}
+                onEnregistrer={v => majChamp('nom_dirigeant', v)} />
+              <ChampEditable libelle="Téléphone" valeur={prospect.telephone} type="tel" mono
+                onEnregistrer={v => majChamp('telephone', v)} />
+              <ChampEditable libelle="Email" valeur={prospect.email_contact} type="email"
+                onEnregistrer={v => majChamp('email_contact', v)} />
+              <ChampEditable libelle="Site web" valeur={prospect.site_web} type="url"
+                onEnregistrer={v => majChamp('site_web', v)} />
+              <ChampEditable libelle="Adresse" valeur={prospect.adresse}
+                onEnregistrer={v => majChamp('adresse', v)} />
+              <ChampEditable libelle="Ville" valeur={prospect.ville}
+                onEnregistrer={v => majChamp('ville', v)} />
+              <ChampEditable libelle="SIRET" valeur={prospect.siret} mono
+                onEnregistrer={v => majChamp('siret', v)} />
+
+              {/* Les liens d'action restent séparés de l'édition : un clic sur
+                  la valeur la modifie, un clic ici lance l'appel ou le mail. */}
+              {(prospect.telephone || prospect.email_contact || prospect.site_web) && (
+                <div className="flex gap-3 pt-2 text-xs" style={{ borderTop: '1px solid var(--acier-600)' }}>
+                  {prospect.telephone && (
+                    <a href={`tel:${prospect.telephone}`} className="pt-2 text-[var(--theme-primary)] hover:opacity-80">Appeler</a>
+                  )}
+                  {prospect.email_contact && (
+                    <a href={`mailto:${prospect.email_contact}`} className="pt-2 text-[var(--theme-primary)] hover:opacity-80">Écrire</a>
+                  )}
+                  {prospect.site_web && (
+                    <a href={prospect.site_web} target="_blank" rel="noopener noreferrer" className="pt-2 text-[var(--theme-primary)] hover:opacity-80">Ouvrir le site</a>
+                  )}
                 </div>
               )}
             </div>
@@ -303,7 +349,7 @@ export default function ProspectDetailPage() {
 
           {prospect.resume_ia && (
             <div className="rounded-xl p-5 space-y-3"
-              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
+              style={{ background: 'var(--acier-800)', border: '1px solid var(--acier-600)' }}>
               <h3 className="text-xs font-semibold tracking-widest text-white/40">ANALYSE IA</h3>
               <p className="text-sm text-white/70 leading-relaxed">{prospect.resume_ia}</p>
             </div>
@@ -328,7 +374,7 @@ export default function ProspectDetailPage() {
 
           {/* Analyse du site */}
           <div className="rounded-xl p-5"
-            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            style={{ background: 'var(--acier-800)', border: '1px solid var(--acier-600)' }}>
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-xs font-semibold tracking-widest text-white/40">ANALYSE DU SITE</h3>
               {prospect.analyse_json?.analyse_le && (
@@ -380,15 +426,31 @@ export default function ProspectDetailPage() {
           </div>
 
           <div className="rounded-xl p-5"
-            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
-            <h3 className="text-xs font-semibold tracking-widest text-white/40 mb-3">NOTES</h3>
-            <p className="text-sm text-white/70 whitespace-pre-wrap">
-              {prospect.notes || <span className="text-white/20">Aucune note</span>}
-            </p>
+            style={{ background: 'var(--acier-800)', border: '1px solid var(--acier-600)' }}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-semibold tracking-widest text-white/40">NOTES</h3>
+              {notesModifiees && (
+                <button onClick={enregistrerNotes} disabled={notesEnCours}
+                  className="titre text-[10px] px-2 py-1 tracking-[0.12em] transition disabled:opacity-50"
+                  style={{ color: 'var(--theme-primary)', border: '1px solid var(--theme-primary-30)' }}>
+                  {notesEnCours ? 'ENREGISTREMENT' : 'ENREGISTRER'}
+                </button>
+              )}
+            </div>
+            {/* Champ long : sauvegarde explicite plutot qu au flou, pour ne pas
+                enregistrer une note a moitie ecrite d'un clic ailleurs. */}
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) enregistrerNotes() }}
+              rows={5}
+              placeholder="Aucune note. Clique pour en ajouter."
+              className="w-full bg-transparent text-sm text-white/80 placeholder-white/20 resize-y focus:outline-none"
+            />
           </div>
 
           <div className="rounded-xl p-5"
-            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.08)' }}>
+            style={{ background: 'var(--acier-800)', border: '1px solid var(--acier-600)' }}>
             <h3 className="text-xs font-semibold tracking-widest text-white/40 mb-4">HISTORIQUE</h3>
 
             {prospect.interactions?.length === 0 ? (
@@ -422,7 +484,7 @@ export default function ProspectDetailPage() {
               </div>
             )}
 
-            <div className="mt-4 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+            <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--acier-600)' }}>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -430,7 +492,7 @@ export default function ProspectDetailPage() {
                   onChange={e => setNote(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && ajouterNote()}
                   placeholder="Ajouter une note ou interaction..."
-                  className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[var(--theme-primary-50)] transition"
+                  className="flex-1 bg-[var(--acier-700)] border border-[var(--acier-600)] rounded-lg px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:border-[var(--theme-primary-50)] transition"
                 />
                 <button onClick={ajouterNote}
                   className="px-4 py-2 rounded-lg text-sm font-semibold text-black"

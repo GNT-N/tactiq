@@ -69,7 +69,8 @@ model Prospect {
   valeur_estimee   Float?        // pipeline €
   analyse_json     Json?         // analyse technique du site + signaux de score
   sirene_json      Json?         // fiche registre national : état, ancienneté, effectif
-  resume_ia        String?       // résumé IA en texte libre
+  resume_ia        String?       // constat : ce qui manque au prospect
+  proposition_ia   String?       // ce qu on peut lui vendre concretement
   notes            String?
   prochaine_action String?
   prochaine_action_date DateTime?
