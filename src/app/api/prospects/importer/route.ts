@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { getUser, unauthorized, userOwnsCampagne } from '@/lib/auth'
 import { chercherProspects, CATEGORIES } from '@/lib/overpass'
+import { cleProspect } from '@/lib/dedupe'
 import { NextResponse } from 'next/server'
 
 // L'appel à Overpass peut prendre plusieurs dizaines de secondes.
@@ -8,18 +9,6 @@ export const maxDuration = 60
 
 const LIMITE_DEFAUT = 50
 const LIMITE_MAX = 200
-
-// Deux fiches OSM de la même enseigne s'écrivent rarement à l'identique :
-// on compare sur une forme normalisée plutôt que caractère par caractère.
-const DIACRITIQUES = /[\u0300-\u036f]/g
-
-function normaliser(v: string) {
-  return v.normalize('NFD').replace(DIACRITIQUES, '').toLowerCase().replace(/[^a-z0-9]/g, '')
-}
-
-function cle(nom: string, ville: string | null) {
-  return `${normaliser(nom)}@${normaliser(ville ?? '')}`
-}
 
 export async function POST(request: Request) {
   try {
@@ -53,11 +42,11 @@ export async function POST(request: Request) {
       where: { user_id: user.id },
       select: { nom_entreprise: true, ville: true },
     })
-    const connus = new Set(existants.map(p => cle(p.nom_entreprise, p.ville)))
+    const connus = new Set(existants.map(p => cleProspect(p.nom_entreprise, p.ville)))
 
     const nouveaux = []
     for (const p of trouves) {
-      const k = cle(p.nom_entreprise, p.ville)
+      const k = cleProspect(p.nom_entreprise, p.ville)
       if (connus.has(k)) continue
       connus.add(k) // évite aussi les doublons internes au lot
       nouveaux.push(p)

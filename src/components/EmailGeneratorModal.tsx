@@ -9,13 +9,17 @@ interface Props {
   onSaved?: () => void
 }
 
+// 'genere' = on archive seulement · 'envoye' = tu l'as envoyé toi-même
+// 'envoi'  = le serveur l'envoie réellement en SMTP
+type Action = 'genere' | 'envoye' | 'envoi'
+
 export default function EmailGeneratorModal({ prospect, onClose, onSaved }: Props) {
   // La génération démarre dès l'ouverture : on est déjà en chargement au montage.
   const [loading, setLoading] = useState(true)
   const [email, setEmail] = useState<{ sujet: string, corps: string } | null>(null)
   const [error, setError] = useState('')
   const [copied, setCopied] = useState(false)
-  const [saving, setSaving] = useState<'genere' | 'envoye' | null>(null)
+  const [saving, setSaving] = useState<Action | null>(null)
 
   const chargerEmail = () =>
     apiFetch('/api/emails/generate', {
@@ -49,9 +53,9 @@ export default function EmailGeneratorModal({ prospect, onClose, onSaved }: Prop
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const enregistrer = (statut: 'genere' | 'envoye') => {
+  const enregistrer = (action: Action) => {
     if (!email || saving) return
-    setSaving(statut)
+    setSaving(action)
     setError('')
 
     apiFetch('/api/emails', {
@@ -60,16 +64,20 @@ export default function EmailGeneratorModal({ prospect, onClose, onSaved }: Prop
         prospect_id: prospect.id,
         sujet: email.sujet,
         contenu: email.corps,
-        statut,
+        statut: action === 'genere' ? 'genere' : 'envoye',
+        envoyer: action === 'envoi',
       })
     })
-      .then(res => {
-        if (!res.ok) throw new Error('enregistrement')
+      .then(res => res.json().then(data => ({ ok: res.ok, data })))
+      .then(({ ok, data }) => {
+        // Le serveur explique précisément ce qui a échoué (SMTP absent,
+        // prospect sans adresse, refus du serveur mail) : on le montre.
+        if (!ok) throw new Error(data?.error || "Erreur lors de l'enregistrement")
         onSaved?.()
         onClose()
       })
-      .catch(() => {
-        setError("Erreur lors de l'enregistrement")
+      .catch(e => {
+        setError(e instanceof Error ? e.message : "Erreur lors de l'enregistrement")
         setSaving(null)
       })
   }
@@ -152,14 +160,25 @@ export default function EmailGeneratorModal({ prospect, onClose, onSaved }: Prop
                 {saving === 'genere' ? 'Enregistrement...' : '⌸ Enregistrer'}
               </button>
               <button onClick={() => enregistrer('envoye')} disabled={saving !== null}
+                className="px-4 py-2 rounded-lg text-sm text-white/60 hover:text-white transition disabled:opacity-40"
+                style={{ border: '1px solid rgba(255,255,255,0.1)' }}>
+                {saving === 'envoye' ? 'Enregistrement...' : '✓ Marquer envoyé'}
+              </button>
+              <button onClick={() => enregistrer('envoi')}
+                disabled={saving !== null || !prospect.email_contact}
+                title={prospect.email_contact
+                  ? `Envoyer à ${prospect.email_contact}`
+                  : "Ce prospect n'a pas d'adresse email"}
                 className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold text-black transition hover:opacity-80 disabled:opacity-40"
                 style={{ background: 'linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))' }}>
-                {saving === 'envoye' ? 'Enregistrement...' : '✓ Marquer comme envoyé'}
+                {saving === 'envoi' ? 'Envoi...' : '✉ Envoyer'}
               </button>
             </div>
 
             <p className="text-white/30 text-xs">
-              Copie l&apos;email dans ta messagerie pour l&apos;envoyer, puis marque-le comme envoyé ici.
+              {prospect.email_contact
+                ? <>« Envoyer » expédie réellement le message à {prospect.email_contact}. « Marquer envoyé » se contente d&apos;archiver, si tu l&apos;envoies depuis ta messagerie.</>
+                : <>Ce prospect n&apos;a pas d&apos;adresse email : copie le message dans ta messagerie, puis marque-le comme envoyé.</>}
             </p>
           </div>
         )}

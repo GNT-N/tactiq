@@ -45,6 +45,7 @@ export default function ProspectDetailPage() {
   const [deleting, setDeleting] = useState(false)
   const [analysing, setAnalysing] = useState(false)
   const [analyseErreur, setAnalyseErreur] = useState('')
+  const [enrichissement, setEnrichissement] = useState({ encours: false, message: '', erreur: '' })
 
   const chargerProspect = () =>
     apiFetch(`/api/prospects/detail/${id}`)
@@ -68,6 +69,30 @@ export default function ProspectDetailPage() {
   await apiFetch(`/api/prospects/detail/${id}`, { method: 'DELETE' })
   router.push('/prospects')
 }
+
+  const enrichir = () => {
+    setEnrichissement({ encours: true, message: '', erreur: '' })
+
+    apiFetch(`/api/prospects/detail/${id}/enrichir`, { method: 'POST' })
+      .then(res => res.json().then(data => ({ ok: res.ok, data })))
+      .then(({ ok, data }) => {
+        if (!ok) throw new Error(data?.error || 'enrichissement')
+        return chargerProspect().then(() => {
+          setEnrichissement({
+            encours: false,
+            message: data.trouve
+              ? `${data.actif ? 'Entreprise active' : 'ENTREPRISE CESSÉE'} · confiance ${data.confiance}`
+              : 'Aucune entreprise correspondante au registre',
+            erreur: '',
+          })
+        })
+      })
+      .catch(e => setEnrichissement({
+        encours: false,
+        message: '',
+        erreur: e instanceof Error ? e.message : "L'enrichissement a échoué",
+      }))
+  }
 
   const analyser = () => {
     setAnalysing(true)
@@ -150,6 +175,15 @@ export default function ProspectDetailPage() {
         </div>
       )}
 
+      {(enrichissement.message || enrichissement.erreur) && (
+        <p className="text-sm rounded-lg px-4 py-3"
+          style={enrichissement.erreur
+            ? { color: '#f87171', background: 'rgba(127,29,29,0.4)', border: '1px solid rgba(153,27,27,0.5)' }
+            : { color: 'var(--theme-primary)', background: 'var(--theme-primary-10)', border: '1px solid var(--theme-primary-30)' }}>
+          {enrichissement.erreur || enrichissement.message}
+        </p>
+      )}
+
       {/* Header */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -164,6 +198,14 @@ export default function ProspectDetailPage() {
               className="px-3 py-2 rounded-lg text-xs font-semibold transition hover:opacity-80 disabled:opacity-50"
               style={{ border: '1px solid var(--theme-primary-30)', color: 'var(--theme-primary)' }}>
               {analysing ? 'Analyse...' : '⚡ Analyser le site'}
+            </button>
+            <button
+              onClick={enrichir}
+              disabled={enrichissement.encours}
+              title="Rapproche du registre national : SIRET, dirigeant, entreprise encore active"
+              className="px-3 py-2 rounded-lg text-xs font-semibold transition hover:opacity-80 disabled:opacity-50"
+              style={{ border: '1px solid var(--theme-primary-30)', color: 'var(--theme-primary)' }}>
+              {enrichissement.encours ? 'Recherche...' : '⚑ Enrichir'}
             </button>
             <button
               onClick={() => setShowEmailModal(true)}

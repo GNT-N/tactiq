@@ -34,3 +34,17 @@ services:
         sync: false
       - key: GROQ_API_KEY
         sync: false
+      # Envoi d'emails. Avec Gmail : SMTP_HOST=smtp.gmail.com, SMTP_PORT=587,
+      # SMTP_USER=ton adresse, SMTP_PASSWORD=un mot de passe d'application
+      # (à créer dans ton compte Google, la 2FA doit être active).
+      # Sans ces variables, le bouton « Envoyer » refuse explicitement.
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: SMTP_FROM
+        sync: false
