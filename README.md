@@ -137,8 +137,9 @@ npm run seed:secteurs       # 8 secteurs d'activité + leurs arguments
 npm run dev
 ```
 
-L'application est servie à la racine (`/`). La création de compte passe par
-`/register`, mais un seul compte est autorisé : voir « Modèle d'accès ».
+L'application est servie à la racine (`/`). Il n'y a pas de page d'inscription :
+un seul compte existe, créé à la main dans le tableau de bord Supabase. Voir
+« Modèle d'accès ».
 
 ### Variables d'environnement
 
@@ -180,6 +181,15 @@ Fermé par défaut : si `TACTIQ_USER_ID` est absente, l'accès est refusé plut�
 que laissé ouvert. Chaque requête Prisma est en plus filtrée sur `user_id`, et
 `userOwnsProspect()` / `userOwnsCampagne()` valident les identifiants reçus dans
 les corps de requête.
+
+L'allowlist ne protège que les routes de cette application. Elle n'empêche pas
+la création d'un compte côté Supabase, qui se fait directement depuis le
+navigateur avec la clé anonyme — publique par nature. **Il faut donc désactiver
+les inscriptions dans Supabase** : Authentication > Sign In / Providers >
+« Allow new users to sign up ». Sans ce réglage, un inconnu peut créer un compte
+dans le projet : il n'accèdera à aucune donnée (toutes les routes répondent 401),
+mais il consomme le quota d'emails d'authentification. La page `/register` a été
+supprimée de l'application pour la même raison.
 
 **L'authentification par cookies a été abandonnée : ne pas y revenir.** Le jeton
 vit dans le `localStorage`, il n'accompagne donc pas les navigations du

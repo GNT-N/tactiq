@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import Link from 'next/link'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -83,12 +82,6 @@ export default function LoginPage() {
               {loading ? 'Connexion...' : 'Se connecter'}
             </button>
 
-            <p className="text-center text-gray-500 text-sm">
-              Pas encore de compte ?{' '}
-              <Link href="/register" className="text-cyan-400 hover:text-cyan-300">
-                Créer un compte
-              </Link>
-            </p>
           </div>
         </div>
       </div>
