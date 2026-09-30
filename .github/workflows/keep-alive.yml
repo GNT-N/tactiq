@@ -21,12 +21,25 @@ jobs:
     steps:
       - name: Réveiller le service et interroger la base
         env:
-          # Surchargeable sans toucher au code : Settings > Secrets and
-          # variables > Actions > Variables > CRM_URL
-          URL: ${{ vars.CRM_URL || 'https://crm.gonot-nicolas.com' }}
+          # Un SECRET, pas une variable : ce dépôt est public, donc les journaux
+          # d'exécution le sont aussi. GitHub masque les secrets par des *** dans
+          # les logs, alors qu'une variable s'y affiche en clair — ce qui
+          # exposerait l'adresse de l'outil à n'importe qui.
+          # À définir dans Settings > Secrets and variables > Actions >
+          # Secrets > New repository secret, sous le nom CRM_URL
+          # (valeur : https://mon-domaine.example, sans barre oblique finale).
+          URL: ${{ secrets.CRM_URL }}
         run: |
+          if [ -z "$URL" ]; then
+            echo "::error::Le secret CRM_URL n'est pas défini. Sans lui, ce réveil ne peut pas savoir quelle instance appeler, et Supabase se mettra en pause au bout de 7 jours. Le définir dans Settings > Secrets and variables > Actions."
+            exit 1
+          fi
+
           cible="$URL/api/secteurs"
-          echo "Ping de $cible"
+          # On n'affiche jamais $cible : les journaux de ce dépôt sont publics.
+          # Le masquage des secrets par GitHub ne couvre pas une chaîne que l'on
+          # a soi-même concaténée, donc la prudence est ici manuelle.
+          echo "Ping de l'instance (adresse masquée)."
 
           for tentative in 1 2 3; do
             # Le "|| code=000" est hors substitution : sinon le 000 écrit par
